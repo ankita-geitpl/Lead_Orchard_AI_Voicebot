@@ -1,0 +1,37 @@
+# before requirement.txt
+# Run the following commands :-
+# sudo apt update 
+# sudo apt install build-essential
+# sudo apt install python3.11-dev
+# sudo apt-get install portaudio19-dev
+
+
+elevenlabs==0.2.24
+flask==3.0.2
+twilio==8.12.0
+langchain==0.1.0
+langchain_openai==0.0.5
+langchain-community==0.0.16
+# unstructured==0.12.4
+# chromadb==0.3.29
+openai==1.10.0
+PyAudio==0.2.14
+pydantic==1.10.14
+tiktoken==0.5.2
+pydub==0.25.1
+python-daemon==3.0.1
+# dotenv==0.19.0
+
+# install this library manually 
+# pip install "unstructured[csv]"
+# install this library after requirement.txt : sudo apt install ffmpeg 
+
+# To install the SQLit3 , run the following commands :-
+# wget https://www.sqlite.org/2022/sqlite-autoconf-3370200.tar.gz
+# tar xvfz sqlite-autoconf-3370200.tar.gz
+# cd sqlite-autoconf-3370200
+# ./configure
+# make
+# sudo make install
+
+
