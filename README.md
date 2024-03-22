@@ -15,22 +15,22 @@ The project directory structure is organized as follows:
 Voice-Bot/
 │
 ├── data/
-│   └── data_file.pdf         
+│   └── textdata.txt          
 │
-├── app.wsgi                   
-├── botcode.py         
-├── constant.py 
-├── dependency.py         
-└── requirements.txt            
+├── .env                      
+├── availablygcp.json         
+├── dependency.py             
+├── requirements.txt          
+└── static_que.py  
 
 In this structure:
 
-* The data folder contains the data_file.pdf file, which serves as the dataset for training the Voice Bot model.
-* The constant.py file holds all the required environment variables and keys necessary for the project to function properly.
-* The app.wsgi file serves as a configuration file for establishing a proxy connection between the web server and the Python application, defining how requests and responses are handled in the WSGI environment.
-* botcode.py holds the main application for running our voicebot
+* The data folder contains the textdata.txt file, which serves as the dataset for training the Voice Bot model.
+* The .env file holds all the required environment variables and keys necessary for the project to function properly.
+* availablygcp.json contains the Google Cloud Platform (GCP) account setup details, enabling integration with GCP services.
 * dependency.py includes all the import libraries and modules utilized within the project.
 * requirements.txt lists all the Python dependencies required for the project, facilitating easy installation.
+* static_que.py holds all the static questions that the Voice Bot can ask during interactions.
 
 This folder structure ensures that all necessary files and resources are organized logically, making it easier for developers to navigate and understand the project.
 
@@ -67,12 +67,12 @@ sudo apt install ffmpeg
 ```
 This library is necessary for certain audio processing functionalities in the project.
 
-### 5. Setting up a Proxy with Apache and WSGI
-To set up a proxy using Apache and a WSGI file, you first enable the **mod_proxy** module in Apache. 
-Then, in your Apache configuration, you use the **ProxyPass** directive to specify the URL you want to proxy and the backend server. 
-Additionally, you configure a **WSGIScriptAlias** in your Apache configuration to point to your WSGI file, which is responsible for serving your application. 
-Finally, you restart Apache to apply the changes.
-
+### 5. Access variable from .env
+To access variables from the .env file in your app.py file, you can use the dotenv library in Python. Here's how you can do it:
+```bash
+pip install python-dotenv
+```
+Ensure that your .env file is in the same directory as your app.py file, or specify the path to the .env file
 
 By following these steps, you'll ensure that all necessary dependencies are installed correctly, allowing you to run the project smoothly.
 Feel free to adjust the formatting or content as needed!

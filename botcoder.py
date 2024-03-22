@@ -44,7 +44,6 @@ class TwilioCallHandler:
             parsed_date = parser.parse(text, fuzzy=True)
             formatted_date = parsed_date.strftime("%d-%m-%Y")
             return formatted_date
-            
         except ValueError:
             # If parsing fails, return None
             return None
