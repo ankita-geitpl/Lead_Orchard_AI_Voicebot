@@ -7,7 +7,7 @@ API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJsb2NhdGlvbl9pZCI6ImIwTkQ0cTZH
 app = Flask(__name__)
 
 
-call_handler = TwilioCallHandler()
+call_handler = TwilioCallHandler() 
 
 @app.route('/voice', methods=['GET' , 'POST'])
 def voice():
@@ -46,10 +46,10 @@ def voice():
 @app.route('/handle-voice', methods=['GET' , 'POST'])
 def handle_voice_input():
     """Handle user input during the call."""
-    speech_result = request.form.get('SpeechResult')
-   
-    confidence_score = float(request.form.get('Confidence', 0.0))
     response = VoiceResponse()
+
+    speech_result = request.form.get('SpeechResult')
+    confidence_score = float(request.form.get('Confidence', 0.0))
     call_sid = request.form.get('CallSid')
     from_sid = request.form.get('From')
     print("Call SID:", call_sid)
@@ -59,126 +59,117 @@ def handle_voice_input():
         session_id = str(random.randint(1000, 999999))
         sessions[call_sid] = session_id
 
-    if confidence_score > 0.60:
-        if speech_result:
-            ans_1 = call_handler.run_assistant(session_id, speech_result)
-            unknown_answer = ans_1
-            print("chat_history:", sessions[session_id])
-            handler = "/handle-voice" 
-            print()
-            print()
-            print("===============================================unknown",unknown_answer)
-            print()
-            print()
+    if confidence_score > 0.60 and speech_result:
+        
+        ai_response = call_handler.run_assistant(session_id, speech_result)
+        print("chat_history:", sessions[session_id])
+        
+        print()
+        print()
+        print("===============================================unknown",ai_response)
+        print()
+        print()
+        handler = "/handle-voice"
+        inf_1 = "I can help you with that"
+        if inf_1.lower() in ai_response.lower():
+            handler = "contact-information" 
+            with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='auto', action=handler) as gather:
+                gather.say(ai_response, language='en-US')
             
-            inf_1 = "I can help you with that"
-            if inf_1.lower() in unknown_answer.lower():
-                handler = "contact-information" 
-                with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='auto', action=handler) as gather:
-                    gather.say(unknown_answer, language='en-US')
-                
-            
-            else:
-                with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='auto', action=handler) as gather:
-                    gather.say(unknown_answer, language='en-US')
-            
-            
+        
         else:
-            with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='auto', action="/handle-voice") as gather:
-                gather.say("No voice input received. Please try again.", voice=call_handler.liam_voice())
+            with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='auto', action=handler) as gather:
+                gather.say(ai_response, language='en-US')
+        
+        
     else:
         with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='auto', action="/handle-voice") as gather:
-            gather.say("No voice input received. Please try again.", voice=call_handler.liam_voice())
+            gather.say("No voice input received. Please try again.")
 
     return str(response)
 
 @app.route('/contact-information', methods=['GET', 'POST'])
 def contact_information():
     global date_new
-    
+    response = VoiceResponse()
+
     speech_result = request.form.get('SpeechResult')
     confidence_score = float(request.form.get('Confidence', 0.0))
-    response = VoiceResponse()
     call_sid = request.form.get('CallSid')
     session_id = sessions.get(call_sid, None)
     from_sid = request.form.get('From')
     from_num = request.form.get('ForwardedFrom')
     date = call_handler.extract_date(speech_result)
+
     if not session_id:
         session_id = str(random.randint(1000, 999999))
         sessions[call_sid] = session_id
     
-    response_1 = None
+    
     
     if date is not None:
         date_new = date
 
     handler = "contact-information" 
-    if confidence_score > 0.60:
-        if speech_result:
-            unknown_answer = call_handler.run_assistant(session_id, speech_result)
-            print("chat_history:", sessions[session_id])
-            handler = "contact-information" 
-            # file_name = "/home/akash_raut_ar99/voicebot/pdf_data/user_appoint_data/"+"availbaly"+from_sid+".txt"
-            file_name = "C://Users//akash//OneDrive//Desktop//Availably-Voicebot-GEITPL//user_appoint_data//"+"availbaly"+from_sid+".json"
-            inf = "detailed information"
-            if inf.lower() in unknown_answer.lower():
-                print("Entered")
-                lines = unknown_answer.split('\n')
+    if confidence_score > 0.60 and speech_result:
+        
+        ai_response = call_handler.run_assistant(session_id, speech_result)
+        print("chat_history:", sessions[session_id])
+        handler = "contact-information" 
+        
+        # file_name = "C://Users//akash//OneDrive//Desktop//Availably-Voicebot-GEITPL//user_appoint_data//"+"availbaly"+from_sid+".json"
+        inf = "detailed information"
+        if inf.lower() in ai_response.lower():
+            print("Entered")
+            lines = ai_response.split('\n')
 
-                # Initialize an empty dictionary to store appointment information
-                appointment_info = {}
+            # Initialize an empty dictionary to store appointment information
+            appointment_info = {}
 
-                # Parse each line of the appointment information
-                for line in lines:
-                    # Skip lines that don't contain a colon
-                    if ':' not in line:
-                        continue
-                    key, value = line.split(':', 1)
-                    # if 
-                    appointment_info[key.strip()] = value.strip()
-                appointment_info["Date Selected"] = date_new
-                # Store appointment information in JSON file
-                
-                with open(file_name, 'w') as json_file:
-                    json.dump(appointment_info, json_file, indent=4)
-                
-                new_appointment_info,path_1 = call_handler.contact_creation(file_name , from_sid) 
-                
-                print()
-                print()
-                print()   
-                print("===========================================9999999999999",new_appointment_info)
-                print("*******************************************d",path_1)
-                print()
-                print()
-                print() 
-                
-                _ , status_code = call_handler.create_contact(new_appointment_info)
-                print()
-                print(f"=======================================123dsvsdvsd23{response_1}")
-                # Check the response status code
-
-                if status_code == 200:
-                    print("Contact updated successfully")
-                elif status_code == 201:
-                    print("Contact created successfully")
-                else:
-                    print("Failed to create or update contact")
-                
-                print(f"==============================================21313313{response}")
-            with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='auto', action=handler) as gather:
-                gather.say(unknown_answer, language='en-US')
+            # Parse each line of the appointment information
+            for line in lines:
+                # Skip lines that don't contain a colon
+                if ':' not in line:
+                    continue
+                key, value = line.split(':', 1)
+                # if 
+                appointment_info[key.strip()] = value.strip()
+            appointment_info["Date Selected"] = date_new
+            # Store appointment information in JSON file
             
-        else:
-            with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='auto', action=handler) as gather:
-                gather.say("No voice input received. Please try again.")
+            # with open(file_name, 'w') as json_file:
+            #     json.dump(appointment_info, json_file, indent=4)
+            
+            contact_info = call_handler.get_subaccount_info(appointment_info , from_sid) 
+            
+            print()
+            print()
+            print()   
+            print("===========================================9999999999999",contact_info)
+            print()
+            print()
+            print() 
+            
+            _ , status_code = call_handler.create_contact(contact_info)
+
+        
+            # Check the response status code
+            if status_code == 200:
+                print("Contact updated successfully")
+            elif status_code == 201:
+                print("Contact created successfully")
+            else:
+                print("Failed to create or update contact")
+            
+        with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='auto', action=handler) as gather:
+            gather.say(ai_response, language='en-US')
+        
     else:
         with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='auto', action=handler) as gather:
             gather.say("No voice input received. Please try again.")
+    
      
     return str(response)
-
 
 @app.route('/modify-prompt', methods=['POST'])
 def modify_prompt():
