@@ -7,15 +7,13 @@ sessions = {}
 # chat_history = []
 data_pdf_path = ""
 prompt_data = ""
+api_key=""
+location_id = ""
 
 class TwilioCallHandler:
-    
-    # Set system message
-    system_message = prompt.prompts
 
     def __init__(self):
         pass
-
 
     def user_id_generate(self):
         uuid_bytes = uuid.uuid1().bytes
@@ -25,7 +23,7 @@ class TwilioCallHandler:
     
     def get_prompt_file(self , to):
         # Replace these values with your PostgreSQL database information
-        global prompt_data , data_pdf_path
+        global prompt_data , data_pdf_path, location_id, api_key
         db_params = constants.db_params
         
         try:
@@ -37,8 +35,12 @@ class TwilioCallHandler:
             cursor = connection.cursor()
             
             # Fetch the PDF file from the database based on the phone number
-            cursor.execute("SELECT prompt_file_path FROM company_data WHERE phone_number = %s", (to,))
-            prompt_pdf_path = cursor.fetchone()[0]
+            cursor.execute("SELECT prompt_file_path,location_id,api_key FROM company_data WHERE phone_number = %s", (to,))
+            retrieve_data = cursor.fetchone()
+            prompt_pdf_path = retrieve_data['prompt_file_path']
+            location_id = retrieve_data['location_id']
+            api_key = retrieve_data['api_key']
+
             
             with open(prompt_pdf_path , 'rb') as file:
                 pdf_reader = PdfReader(io.BytesIO(file.read()))
@@ -84,18 +86,18 @@ class TwilioCallHandler:
             # If parsing fails, return None
             return None
         
-
-    def contact_creation(self , path , to_number):
+    def get_subaccount_info(self , appointment_info , to_number):
         # Read the JSON file
-        with open(path, "r") as json_file:
-            data_dict = json.load(json_file)
+        # with open(path, "r") as json_file:
+        #     data_dict = json.load(json_file)
 
         # import pdb;pdb.set_trace()
-        data_dict_clean = {key.lstrip('- '): value if '-' in key else value for key, value in data_dict.items()}
+        data_dict_clean = {key.lstrip('- '): value if '-' in key else value for key, value in appointment_info.items()}
         # Access the values using the keys
         first_name = data_dict_clean["First Name"]
         last_name = data_dict_clean["Last Name"]
         company_name = data_dict_clean["Company Name"]
+        # appointment_info.update({'locationId':location_id})
         phone_number_preference = data_dict_clean["Is this phone number the best to call"]
         confirmation = data_dict_clean["Confirmation"]
         date_selected = data_dict_clean["Date Selected"]
@@ -104,29 +106,26 @@ class TwilioCallHandler:
             "firstName": first_name,
             "lastName": last_name,
             "name": first_name + " " + last_name,
-            "locationId": "b0ND4q6GOQShIG1eaBM8",
+            "locationId": location_id,
             "companyName": company_name,
             "tags": [
                     "By AI softwere"
                     ]
         }
-        file_name = "C://Users//akash//OneDrive//Desktop//Availably-Voicebot-GEITPL//user_appoint_data//"+"availbaly_1_new"+".json"
-        with open(file_name, 'w') as json_file:
-                json.dump(contact_data, json_file, indent=4)
+        # file_name = "C://Users//akash//OneDrive//Desktop//Availably-Voicebot-GEITPL//user_appoint_data//"+"availbaly_1_new"+".json"
+        # with open(file_name, 'w') as json_file:
+        #         json.dump(contact_data, json_file, indent=4)
 
-        return contact_data,file_name
-
+        return contact_data
 
     def create_contact(self , data):
-        import pdb;pdb.set_trace()
-        headers = {"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}
+        headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
         response = requests.post(GOHIGHLEVEL_API_URL, headers=headers, json=data)
         if response.status_code == 200:
             return response.json().get('data', {}),201
         else:
             return None
         
-
     def get_documents_from_web(self , data_pdf_path):
         file_loader = PyMuPDFLoader(data_pdf_path)
         documents = file_loader.load()
@@ -140,7 +139,6 @@ class TwilioCallHandler:
         embedding = OpenAIEmbeddings(openai_api_key=openai_api_key)
         vectorStore = FAISS.from_documents(splitdocs, embedding=embedding)
         return vectorStore
-
     
     def create_chain(self, vectorStore):
         # Create and return a retrieval chain
