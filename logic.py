@@ -37,9 +37,9 @@ class TwilioCallHandler:
             # Fetch the PDF file from the database based on the phone number
             cursor.execute("SELECT prompt_file_path,location_id,api_key FROM company_data WHERE phone_number = %s", (to,))
             retrieve_data = cursor.fetchone()
-            prompt_pdf_path = retrieve_data['prompt_file_path']
-            location_id = retrieve_data['location_id']
-            api_key = retrieve_data['api_key']
+            prompt_pdf_path = retrieve_data[0]
+            location_id = retrieve_data[1]
+            api_key = retrieve_data[2]
 
             
             with open(prompt_pdf_path , 'rb') as file:
