@@ -47,7 +47,6 @@ def voice():
 def handle_voice_input():
     """Handle user input during the call."""
     response = VoiceResponse()
-    import pdb;pdb.set_trace()
     speech_result = request.form.get('SpeechResult')
     confidence_score = float(request.form.get('Confidence', 0.0))
     call_sid = request.form.get('CallSid')
