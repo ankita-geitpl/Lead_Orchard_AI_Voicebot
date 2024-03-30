@@ -101,6 +101,9 @@ class TwilioCallHandler:
         phone_number_preference = data_dict_clean["Is this phone number the best to call"]
         confirmation = data_dict_clean["Confirmation"]
         date_selected = data_dict_clean["Date Selected"]
+        time_selected = data_dict_clean["Time Selected"]
+
+
         contact_data = {
             "phone": to_number,
             "firstName": first_name,
@@ -108,6 +111,8 @@ class TwilioCallHandler:
             "name": first_name + " " + last_name,
             "locationId": location_id,
             "companyName": company_name,
+            "dateSelected": date_selected,
+            "timeSelected": time_selected,
             "tags": [
                     "By AI softwere"
                     ]

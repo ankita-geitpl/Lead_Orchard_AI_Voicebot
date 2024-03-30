@@ -1,8 +1,8 @@
 from dependency import *
 from logic import *
 openai_api_key = os.environ["OPENAI_API_KEY"] = constants.APIKEY
-GOHIGHLEVEL_API_URL = "https://rest.gohighlevel.com/v1/contacts"
-API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJsb2NhdGlvbl9pZCI6ImIwTkQ0cTZHT1FTaElHMWVhQk04IiwiY29tcGFueV9pZCI6IjZ5aDhvREF4V3FxVFVFMjFrS2JIIiwidmVyc2lvbiI6MSwiaWF0IjoxNzA4Njg0NDcyNjM0LCJzdWIiOiJ1c2VyX2lkIn0.j6A2ceU9L5YW18I_QiE3vBXvc13pffRlQ2SDDlt1yp8"
+GOHIGHLEVEL_API_URL = constants.GOHIGHLEVEL_API_URL
+# API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJsb2NhdGlvbl9pZCI6ImIwTkQ0cTZHT1FTaElHMWVhQk04IiwiY29tcGFueV9pZCI6IjZ5aDhvREF4V3FxVFVFMjFrS2JIIiwidmVyc2lvbiI6MSwiaWF0IjoxNzA4Njg0NDcyNjM0LCJzdWIiOiJ1c2VyX2lkIn0.j6A2ceU9L5YW18I_QiE3vBXvc13pffRlQ2SDDlt1yp8"
 
 app = Flask(__name__)
 
@@ -15,20 +15,15 @@ def voice():
     response = VoiceResponse()
     chat_history = [] 
     call_sid = request.form.get('CallSid')
-    from_num = request.form.get('ForwardedFrom')
+    company_number = request.form.get('ForwardedFrom')
     print("==============================================")
-    print("Forwarded From : ",from_num)
+    print("Forwarded From : ",company_number)
     print("==============================================")
     print()
     print()
     session_id = sessions.get(call_sid, None)
-    from_num_1 = request.form.get('To')
-    print("==============================================")
-    print("TO NUMBERS From : ",from_num_1)
-    print("==============================================")
-    print()
-    print()
-    call_handler.get_prompt_file(from_num_1)
+
+    call_handler.get_prompt_file(company_number)
 
     try:
         if not session_id:
@@ -51,8 +46,9 @@ def handle_voice_input():
     confidence_score = float(request.form.get('Confidence', 0.0))
     call_sid = request.form.get('CallSid')
     from_sid = request.form.get('From')
-    print("Call SID:", call_sid)
     session_id = sessions.get(call_sid, None)
+
+
 
     if not session_id:
         session_id = str(random.randint(1000, 999999))
@@ -96,9 +92,21 @@ def contact_information():
     confidence_score = float(request.form.get('Confidence', 0.0))
     call_sid = request.form.get('CallSid')
     session_id = sessions.get(call_sid, None)
-    from_sid = request.form.get('From')
-    from_num = request.form.get('ForwardedFrom')
+    caller_number = request.form.get('From')
+    company_number = request.form.get('ForwardedFrom')
     date = call_handler.extract_date(speech_result)
+
+    print()
+    print()
+    print()
+    print()
+    print()
+    print("phone_number is =========================================",company_number)
+    print()
+    print()
+    print()
+    print()
+    print()
 
     if not session_id:
         session_id = str(random.randint(1000, 999999))
@@ -117,8 +125,9 @@ def contact_information():
         handler = "contact-information" 
         
         # file_name = "C://Users//akash//OneDrive//Desktop//Availably-Voicebot-GEITPL//user_appoint_data//"+"availbaly"+from_sid+".json"
-        inf = "detailed information"
-        if inf.lower() in ai_response.lower():
+        file_name = "/home/akash_raut/voicebot/pdf_data/user_appoint_data/"+caller_number+"+"+company_number+".json"
+        # inf = "detailed information"
+        if "detailed information".lower() in ai_response.lower() or "Here is a summary".lower() in ai_response.lower():
             print("Entered")
             lines = ai_response.split('\n')
 
@@ -139,7 +148,7 @@ def contact_information():
             # with open(file_name, 'w') as json_file:
             #     json.dump(appointment_info, json_file, indent=4)
             
-            contact_info = call_handler.get_subaccount_info(appointment_info , from_sid) 
+            contact_info = call_handler.get_subaccount_info(appointment_info , caller_number) 
             
             print()
             print()
@@ -148,7 +157,10 @@ def contact_information():
             print()
             print()
             print() 
-            
+
+            with open(file_name, 'w') as json_file:
+                json.dump(contact_info, json_file, indent=4)
+
             _ , status_code = call_handler.create_contact(contact_info)
 
         
@@ -177,6 +189,7 @@ def modify_prompt():
     prompt_file = request.files.get("prompt_file")
     phone_number = request.form.get("phone_number")
     phone_number = phone_number.replace("-", "")
+    
 
     # Check if required data is present
     if phone_number is None:
@@ -210,8 +223,8 @@ def modify_prompt():
         # Check if the phone number exists in the database
         cursor.execute("SELECT * FROM company_data WHERE phone_number = %s", (phone_number,))
         existing_record = cursor.fetchone()
-        pdf_directory = "C:/Users/akash/OneDrive/Desktop/Availably-Voicebot-GEITPL/pdf_data/prompt_data/"
-        data_directory = "C:/Users/akash/OneDrive/Desktop/Availably-Voicebot-GEITPL/pdf_data/datafile_data/"
+        pdf_directory = "/home/akash_raut/voicebot/pdf_data/prompt_data/"
+        data_directory = "/home/akash_raut/voicebot/pdf_data/datafile_data/"
         prompt_path = None
         data_path = None
 
