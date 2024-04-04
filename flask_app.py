@@ -224,6 +224,39 @@ def remove_company_data(id):
             conn.close()
             print("Connection closed.")
 
+def list_ai_enable_numbers():
+    try:
+        # Connect to the database
+        db_params = constants.db_params
+    
+        # Create a connection to the database
+        conn = psycopg2.connect(**db_params)
+
+        # Create a cursor object
+        cur = conn.cursor()
+
+        # Execute SQL query to fetch data
+        cur.execute("SELECT phone_number FROM company_data WHERE is_active = True",)
+
+        # Fetch all rows
+        rows = cur.fetchall()
+        
+
+        # Convert rows to list of dictionaries
+        company_numbers = []
+        for row in rows:
+            company_numbers.append(row[0])
+        # # Close cursor and connection
+        cur.close()
+        conn.close()
+
+        # Return JSON response
+        return company_numbers
+
+    except Exception as e:
+        print(e)
+        return jsonify({'error': str(e)}), 500
+       
 # View to render a web page
 @app.route('/admin')
 def home():
@@ -398,6 +431,11 @@ def delete_location(record_id):
     # Redirect to the Home page
     flash('Location Removed Successfully', 'success')
     return redirect('/admin')
+
+# Define a route to handle DELETE requests for DELETE location information
+@app.route('/ai_number_list', methods=['GET'])
+def get_ai_numbers():
+    return list_ai_enable_numbers()    
 
 # Twilio call Handling endpoints
 @app.route('/voice', methods=['GET' , 'POST'])
