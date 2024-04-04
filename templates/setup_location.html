@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Locations for AI</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .table th,
+        .table td {
+            font-size: 12px; /* Adjust the font size as needed */
+        }
+
+        .button_groups {
+            display: inline-flex;
+
+        }
+        .btn {
+            font-size: 12px;
+        }
+
+        .add-location-btn {
+            margin-bottom: 10px;
+        }
+    </style>
+    
+</head>
+<body>
+    <div aria-live="polite" aria-atomic="true" style="position: relative; z-index: 1000;top:-46px">
+        <!-- Position it -->
+        <div style="position: absolute; top: 0; left: 0;">
+      
+          <!-- Then put toasts within -->
+          {% for message in messages %}
+          <div class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-delay="10000">
+            <div class="toast-header bg-info text-white">
+              <!-- <img src="..." class="rounded mr-2" alt="..."> -->
+              <strong class="mr-auto">Notification</strong>
+              <small class="text-white">just now</small>
+              <button type="button" class="ml-2 mb-1 close" data-dismiss="toast" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="toast-body bg-white">
+              {{message}}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+    </div>
+    
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-12">
+                <h3 class="text-center mb-4">Setup Locations for AI</h3>
+                <a href="{{ api_url }}" class="btn btn-success add-location-btn right float-right">Add New Location</a>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Company Name</th>
+                            <th>Phone Number</th>
+                            <th>Location ID</th>
+                            <th>Prompt File</th>
+                            <th>Directory File</th>
+                            <th>Is Active</th>
+                            <th>Options</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for location in locations %}
+                        <tr>
+                            <td>{{ location.company_name }}</td>
+                            <td>{{ location.phone_number }}</td>
+                            <td>{{ location.location_id }}</td>
+                            <td>{{ location.prompt_file }}</td>
+                            <td>{{ location.directory_file }}</td>
+                            <td>{{ location.is_active }}</td>
+                            <td class="button_groups">
+                                <a href="/admin/update_location/{{location.id}}" class="btn btn-sm btn-primary mr-2">Edit</a>
+                                <form action="/admin/delete_location/{{ location.id }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this location?')">
+                                    <input type="hidden" name="_method" value="DELETE">
+                                    <button type="submit" class="btn btn-sm btn-danger">Remove</button>
+                                </form>
+                                
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script> 
+        $('.toast').toast("show")
+     </script>
+</body>
+</html>
