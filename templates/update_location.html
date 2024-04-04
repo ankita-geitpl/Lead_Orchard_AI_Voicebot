@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Location</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div aria-live="polite" aria-atomic="true" style="position: relative; z-index: 1000;top:-46px">
+        <!-- Position it -->
+        <div style="position: absolute; top: 0; left: 0;">
+      
+          <!-- Then put toasts within -->
+          {% for message in messages %}
+          <div class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-delay="10000">
+            <div class="toast-header bg-info text-white">
+              <!-- <img src="..." class="rounded mr-2" alt="..."> -->
+              <strong class="mr-auto">Notification</strong>
+              <small class="text-white">just now</small>
+              <button type="button" class="ml-2 mb-1 close" data-dismiss="toast" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="toast-body bg-white">
+              {{message}}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+    </div>
+    <div class="container mt-5">
+        <h2 class="mb-4">Update Location</h2>
+        <form action="/admin/update_location/{{ record_id }}" method="post" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="name">Company Name:</label>
+                <input type="text" class="form-control" id="company_name" name="company_name" value="{{ company_data['company_name'] }}" required>
+            </div>
+            <div class="form-group">
+                <label for="phone_number">Phone Number <abbr title="Phone Number" style="color: red;">*</abbr></label></label>
+                <input type="text" class="form-control" id="phone_number" name="phone_number" value="{{ company_data['phone_number']}}" required>
+            </div>
+            <div class="form-group">
+                <label for="name">location_id <abbr title="Phone Number" style="color: red;">*</abbr></label>
+                <input type="text" class="form-control" id="location_id" name="location_id" value="{{ company_data['location_id'] }}" required>
+            </div>
+            <div class="form-group">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="is_active" name="is_active" {% if company_data['is_active'] %} checked {% endif %}>
+                    <label class="form-check-label" for="is_active">Active Location for AI</label>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="prompt_file">Prompt File:</label>
+                <input type="file" class="form-control-file" id="prompt_file" name="prompt_file"><span>Existing Filename - {{ company_data['prompt_file'] }} </span>
+            </div>
+            <div class="form-group">
+                <label for="directory_file">Directory File:</label>
+                <input type="file" class="form-control-file" id="directory_file" name="directory_file"><span>Existing Filename -{{ company_data['directory_file'] }} </span>
+            </div>
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+    </div>
+
+    <!-- Bootstrap JS (optional, if needed) -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script> 
+        $('.toast').toast("show")
+    </script>
+</body>
+</html>
