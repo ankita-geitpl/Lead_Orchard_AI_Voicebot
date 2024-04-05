@@ -70,6 +70,7 @@ class TwilioCallHandler:
                 print("Connection closed.")
     
     def extract_date(self,text):
+        print("++++++++++++++++++++++++++++++++++++++text",text)
         time_cleaned = text.replace('.', '')
         if "am".lower() not in time_cleaned.lower() and "pm".lower() not in time_cleaned.lower():
             try:

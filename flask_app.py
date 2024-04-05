@@ -26,8 +26,8 @@ api_url = (
 app = Flask(__name__)
 app.secret_key = constants.SECRET_KEY
 app.config['TEMPLATES_AUTO_RELOAD'] = True
-app.config['PROMPT_UPLOAD_FOLDER'] = "pdf_data/prompt_data/"
-app.config['DATA_UPLOAD_FOLDER'] = "pdf_data/datafile_data/"
+app.config['PROMPT_UPLOAD_FOLDER'] = constants.PROMPT_UPLOAD_FOLDER
+app.config['DATA_UPLOAD_FOLDER'] = constants.DATA_UPLOAD_FOLDER
 
 
 
@@ -77,7 +77,7 @@ def get_companies_data():
         # Close cursor and connection
         cur.close()
         conn.close()
-
+      
         # Return JSON response
         return company_data
 
@@ -112,8 +112,10 @@ def get_company_data(id):
                 'prompt_file': row[2],
                 'directory_file': row[4],
                 'company_name': row[8],
-                'is_active': row[19]
+                'is_active': row[19],
+                'api_key': row[7]
             }
+
         else:
             # Handle case where no row is found for the given id
             company_data = {}
@@ -368,6 +370,7 @@ def update_location(record_id):
         # Get form datasss
         company_name = request.form['company_name']
         location_id = request.form['location_id']
+        api_key =     request.form['api_key']
         if 'is_active' in request.form:
            is_active = True
         is_active = is_active
@@ -382,14 +385,27 @@ def update_location(record_id):
         prompt_file = request.files['prompt_file']
         directory_file = request.files['directory_file']
 
+        # Get the current datetime
+        current_datetime = datetime.now()
+
+        # Generate a unique string based on the current datetime
+        datetime_string = current_datetime.strftime("%Y-%m-%d_%H-%M-%S")
+
+
         # Save uploaded files to a directory
         if prompt_file:
-            prompt_filename = secure_filename(prompt_file.filename)
+            filename = prompt_file.filename
+            name, extension = os.path.splitext(filename)
+            # Secure the filename and append datetime string and extension
+            prompt_filename = secure_filename(f"{name}_{datetime_string}{extension}")
             prompt_file_path = os.path.join(app.config['PROMPT_UPLOAD_FOLDER'], prompt_filename)
             prompt_file.save(prompt_file_path)
-           
+
         if directory_file:
-            directory_filename = secure_filename(directory_file.filename)
+            filename = directory_file.filename
+            name, extension = os.path.splitext(filename)
+            # Secure the filename and append datetime string and extension
+            directory_filename = secure_filename(f"{name}_{datetime_string}{extension}")
             directory_filepath = os.path.join(app.config['DATA_UPLOAD_FOLDER'], directory_filename)
             directory_file.save(directory_filepath)
 
@@ -398,6 +414,7 @@ def update_location(record_id):
             "location_id": location_id,
             "is_active": is_active,
             "phone_number": phone_number,
+            'api_key': api_key
         }
 
         # Add "prompt_file" and "directory_file" to data if present
@@ -523,6 +540,7 @@ def contact_information():
     session_id = sessions.get(call_sid, None)
     caller_number = request.form.get('From')
     company_number = request.form.get('ForwardedFrom')
+    print("111111111111111111111111111111111111111111111111speech_result",speech_result)
     date = call_handler.extract_date(speech_result)
 
     print()
@@ -606,7 +624,7 @@ def contact_information():
         
     else:
         with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='auto', action=handler) as gather:
-            gather.say("No voice input received. Please try again.")
+            gather.say("No voice input received. Please try again.", language='en-US')
     
      
     return str(response)
