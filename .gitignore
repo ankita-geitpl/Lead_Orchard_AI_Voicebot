@@ -1,4 +1,4 @@
 .env
 env/
 constants.py
-user_appoint_data/
+pdf_data/user_appoint_data/
