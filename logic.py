@@ -69,22 +69,24 @@ class TwilioCallHandler:
                 connection.close()
                 print("Connection closed.")
     
-    def extract_date(self , text):
-        try:
-            # Check if the text contains references to "today" or "tomorrow"
-            today = datetime.now().date()
-            if 'today' in text.lower():
-                return today.strftime("%d-%m-%Y")
-            elif 'tomorrow' in text.lower():
-                tomorrow = today + timedelta(days=1)
-                return tomorrow.strftime("%d-%m-%Y")
-            # Attempt to parse the date using dateutil.parser
-            parsed_date = parser.parse(text, fuzzy=True)
-            formatted_date = parsed_date.strftime("%d-%m-%Y")
-            return formatted_date
-        except ValueError:
-            # If parsing fails, return None
-            return None
+    def extract_date(self,text):
+        time_cleaned = text.replace('.', '')
+        if "am".lower() not in time_cleaned.lower() and "pm".lower() not in time_cleaned.lower():
+            try:
+                # Check if the text contains references to "today" or "tomorrow"
+                today = datetime.now().date()
+                if 'today' in text.lower():
+                    return today.strftime("%d-%m-%Y")
+                elif 'tomorrow' in text.lower():
+                    tomorrow = today + timedelta(days=1)
+                    return tomorrow.strftime("%d-%m-%Y")
+                # Attempt to parse the date using dateutil.parser
+                parsed_date = parser.parse(text, fuzzy=True)
+                formatted_date = parsed_date.strftime("%d-%m-%Y")
+                return formatted_date
+            except ValueError:
+                # If parsing fails, return None
+                return None
         
     def get_subaccount_info(self , appointment_info , to_number):
         # Read the JSON file
@@ -93,13 +95,16 @@ class TwilioCallHandler:
 
         # import pdb;pdb.set_trace()
         data_dict_clean = {key.lstrip('- '): value if '-' in key else value for key, value in appointment_info.items()}
+        print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+        print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+        print("data_dict_clean--------------------------------------",data_dict_clean)
         # Access the values using the keys
         first_name = data_dict_clean["First Name"]
         last_name = data_dict_clean["Last Name"]
         company_name = data_dict_clean["Company Name"]
         # appointment_info.update({'locationId':location_id})
         phone_number_preference = data_dict_clean["Is this phone number the best to call"]
-        confirmation = data_dict_clean["Confirmation"]
+        # confirmation = data_dict_clean["Confirmation"]
         date_selected = data_dict_clean["Date Selected"]
         time_selected = data_dict_clean["Time Selected"]
 
