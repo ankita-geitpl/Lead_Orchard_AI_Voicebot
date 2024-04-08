@@ -1,14 +1,18 @@
-import psycopg2
+from dependency import *
+import constants
 
 def create_table_with_columns():
     # Database connection parameters
-    conn_params = {
-        'host': 'localhost',
-        'port': '5432',
-        'database': 'voicebot',
-        'user': 'availably_ai',
-        'password': 'Fr4g!le$ecuR1ty!'
-    }
+    # conn_params = {
+    #     "dbname": "your_database_name",
+    #     'host': 'localhost',
+    #     'port': '5432',
+    #     'database': 'ai_chatbot_development',
+    #     'user': 'postgres',
+    #     'password': 'voice21@'
+    # }
+
+    conn_params = constants.db_params
 
     # Define table creation query
     create_table_query = """
@@ -40,25 +44,24 @@ def create_table_with_columns():
 
     # Columns to add if they don't exist
     columns_to_add = [
-        "id SERIAL PRIMARY KEY",
-        "access_token TEXT NULL",
-        "token_type TEXT NULL",
-        "expires_in INTEGER NULL",
-        "refresh_token TEXT NULL",
-        "scope TEXT NULL",
-        "user_type VARCHAR(50) NULL",
-        "company_id VARCHAR(255) NULL",
-        "approved_locations TEXT[] NULL",
-        "plan_id VARCHAR(255) NULL",
-        "is_active BOOLEAN DEFAULT false",
+        "id SERIAL PRIMARY KEY,"
+        "access_token TEXT NULL,"
+        "token_type TEXT NULL,"
+        "expires_in INTEGER NULL,"
+        "refresh_token TEXT NULL,"
+        "scope TEXT NULL,"
+        "user_type VARCHAR(50) NULL,"
+        "company_id VARCHAR(255) NULL,"
+        "approved_locations TEXT[] NULL,"
+        "plan_id VARCHAR(255) NULL,"
+        "is_active BOOLEAN DEFAULT false,"
         # Add other columns here
     ]
 
     # Constraints to add if they don't exist
     constraints_to_add = [
         "CONSTRAINT location_id_uniq UNIQUE (location_id)",
-        # "CONSTRAINT company_data_pkey PRIMARY KEY (id),
-
+        "CONSTRAINT location_id_unique UNIQUE (location_id)"
         # Add other constraints here
     ]
 
@@ -110,5 +113,51 @@ def constraint_exists(cur, constraint_name):
     )
     return cur.fetchone()[0]
 
+def customer_data_create():
+    db_params = constants.db_params
+    try:
+        # Create a connection to the database
+        connection = psycopg2.connect(**db_params)
+        print()
+        print("===========================================================")
+        print("Connected to the database!")
+        print("===========================================================")
+        print()
+        # Create a cursor
+        cursor = connection.cursor()
+
+        # Check if the phonenumbers table exists, if not, create it
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS customer_data (
+                company_id VARCHAR(255) NOT NULL,
+                company_name TEXT NOT NULL,
+                phone_number VARCHAR(20) UNIQUE,
+                contact_id TEXT UNIQUE
+            )
+        """)    
+        connection.commit()
+        print()
+        print("===========================================================")
+        print("Customer Data Table Created successfully!")
+        print("===========================================================")
+        print()
+    except Error as e:
+        print()
+        print("===========================================================")
+        print("Error connecting to the database:", e)
+        print("===========================================================")
+        print()
+    finally:
+        # Close the cursor and connection
+        if connection:
+            cursor.close()
+            connection.close()
+            print()
+            print("===========================================================")
+            print("Connection closed.")
+            print("===========================================================")
+            print()
+
 if __name__ == "__main__":
     create_table_with_columns()
+    customer_data_create()

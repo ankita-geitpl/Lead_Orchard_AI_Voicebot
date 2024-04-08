@@ -1,33 +1,65 @@
 from dependency import *
 from logic import *
-GHL_APPOINTMENTS_URL = "https://rest.gohighlevel.com/v1/appointments"
+
+GHL_APPOINTMENTS_URL = constants.GHL_APPOINTMENTS_URL
 
 class AppointmentHandler:
 
     def __init__(self):
         pass
-
-    def create_appointment(self, account_number, data, calendar_id, time_zone,slot):        
-        subaccount_info = TwilioCallHandler.get_subaccount_info(account_number)
-        location_id = subaccount_info["location_id"]
-        data.update({'locationId': location_id})       
-        api_key = subaccount_info["api_key"]
-        
-
-        # Update data dictionary with calendarId and timezone
-        data.update({
-            "calendarId": calendar_id,
-            "selectedTimezone": time_zone,
-            # "selectedSlot": slot,
-            # "email": "example@example.com",
-            # "phone": account_number,
-        })
-
     
-        headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
-        response = requests.post(GHL_APPOINTMENTS_URL, headers=headers, json=data)
+    def slot_mapper(self, start_time_str):
+        start_time = datetime.fromisoformat(start_time_str.replace('Z', '+00:00'))
+        # Add 30 minutes
+        end_time = start_time + timedelta(minutes=30)
+        # Convert back to ISO format
+        end_time_str = end_time.isoformat()
+        return end_time_str
+
+    def create_appointment(self, call_sid , calendar_id, start_time): 
+        path = sessions[call_sid]['file_name']
+        contact_id = sessions[call_sid]['contact_id']
+        api_key = sessions[call_sid]['api_key']
+        with open(path, "r") as json_file:    
+            data_dict = json.load(json_file)
+        data_dict_clean = {key.lstrip('- '): value if '-' in key else value for key, value in data_dict.items()}
         
-        if response.status_code == 200:
-            return response.json().get('data', {}), 200
+        first_name = data_dict_clean["firstName"]
+        last_name = data_dict_clean["lastName"]
+        end_time = self.slot_mapper(start_time)
+        # Update data dictionary with calendarId and timezone
+        data_dict_clean.update({
+            "calendarId": calendar_id,
+            "contactId": contact_id,
+            "startTime": start_time,
+            "endTime": end_time,
+            "title": f"{first_name} {last_name}"
+        })
+        
+        
+        conn = http.client.HTTPSConnection("services.leadconnectorhq.com")
+
+        payload = data_dict_clean
+        keys_to_remove = ['dateSelected', 'timeSelected']
+        for key in keys_to_remove:
+            payload.pop(key)
+        
+        headers = {
+                    'Authorization': f"Bearer {api_key}",
+                    'Version': "2021-07-28",
+                    'Content-Type': "application/json",
+                    'Accept': "application/json"
+                }
+
+
+        conn.request("POST", "/calendars/events/appointments", json.dumps(payload), headers)
+
+        res = conn.getresponse()
+        data = res.read()
+
+        # import pdb; pdb.set_trace()
+        
+        if res.status == 201:
+            return res.status
         else:
             return None

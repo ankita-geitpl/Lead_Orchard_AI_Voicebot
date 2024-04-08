@@ -1,13 +1,9 @@
-from dependency import *
 from logic import *
-from flask import render_template, redirect, flash, get_flashed_messages
-from werkzeug.utils import secure_filename
+from dependency import *
+from appointment import *
 
 openai_api_key = os.environ["OPENAI_API_KEY"] = constants.APIKEY
 GOHIGHLEVEL_API_URL = constants.GOHIGHLEVEL_API_URL
-# API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJsb2NhdGlvbl9pZCI6ImIwTkQ0cTZHT1FTaElHMWVhQk04IiwiY29tcGFueV9pZCI6IjZ5aDhvREF4V3FxVFVFMjFrS2JIIiwidmVyc2lvbiI6MSwiaWF0IjoxNzA4Njg0NDcyNjM0LCJzdWIiOiJ1c2VyX2lkIn0.j6A2ceU9L5YW18I_QiE3vBXvc13pffRlQ2SDDlt1yp8"
-
-call_handler = TwilioCallHandler() 
 
 # T account
 CLIENT_ID = constants.MP_CLIENT_ID
@@ -24,11 +20,14 @@ api_url = (
 )
 
 app = Flask(__name__)
+
 app.secret_key = constants.SECRET_KEY
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.config['PROMPT_UPLOAD_FOLDER'] = constants.PROMPT_UPLOAD_FOLDER
 app.config['DATA_UPLOAD_FOLDER'] = constants.DATA_UPLOAD_FOLDER
 
+call_handler = TwilioCallHandler() 
+appointment_handler = GHLAppointmentHandler()
 
 
 def get_companies_data():
@@ -197,7 +196,7 @@ def update_company_data(id, form_json):
             cursor.close()
             connection.close()
             print("Connection closed.")
-
+            
 def remove_company_data(id):
     try:
         # Connect to the database
@@ -225,7 +224,7 @@ def remove_company_data(id):
             cur.close()
             conn.close()
             print("Connection closed.")
-
+            
 def list_ai_enable_numbers():
     try:
         # Connect to the database
@@ -258,7 +257,8 @@ def list_ai_enable_numbers():
     except Exception as e:
         print(e)
         return jsonify({'error': str(e)}), 500
-       
+    
+
 # View to render a web page
 @app.route('/admin')
 def home():
@@ -360,8 +360,7 @@ def home():
         locations =  get_companies_data()
         # Render a template with a button that redirects to the page where the user can generate the choose the location
         return render_template('setup_location.html', api_url=api_url, locations=locations, messages=messages)
-
-# Define a route to handle GET and POST requests for updating location information
+    
 @app.route('/admin/update_location/<string:record_id>', methods=['GET', 'POST'])
 def update_location(record_id):
     messages = get_flashed_messages()
@@ -440,7 +439,7 @@ def update_location(record_id):
         # Render the update location form
         company_data =  get_company_data(record_id)
         return render_template('update_location.html',messages=messages, record_id=record_id, company_data= company_data )
-
+    
 # Define a route to handle DELETE requests for DELETE location information
 @app.route('/admin/delete_location/<string:record_id>', methods=['POST'])
 def delete_location(record_id):
@@ -452,32 +451,54 @@ def delete_location(record_id):
 # Define a route to handle DELETE requests for DELETE location information
 @app.route('/ai_number_list', methods=['GET'])
 def get_ai_numbers():
-    return list_ai_enable_numbers()    
+    return list_ai_enable_numbers() 
 
-# Twilio call Handling endpoints
 @app.route('/voice', methods=['GET' , 'POST'])
 def voice():
     """Handle incoming voice call."""
+    global end_session_time
     response = VoiceResponse()
     chat_history = [] 
+    date_extract = None
+    start_session_time = datetime.now()
+    
+    if start_session_time > end_session_time:
+        sessions.clear()
+        current_date = datetime.now().date()
+        end_of_day = datetime.combine(current_date + timedelta(days=1), datetime.min.time()) - timedelta(seconds=1)
+        end_session_time = end_of_day.replace(hour=23, minute=59, second=59)
+    
     call_sid = request.form.get('CallSid')
     company_number = request.form.get('ForwardedFrom')
-    print("==============================================")
+    to_num = request.form.get('To')
+    print()
+    print("===========================================================")
     print("Forwarded From : ",company_number)
-    print("==============================================")
+    print("===========================================================")
     print()
-    print()
-    session_id = sessions.get(call_sid, None)
-
-    call_handler.get_prompt_file(company_number)
-
+    
+    session_id = None
+    user_id , prompt_data , data_pdf_path , location_id , company_id , company_name , api_key = call_handler.get_prompt_file(to_num)
+    if call_sid not in sessions:
+        sessions[call_sid] = {}
     try:
-        if not session_id:
+        if session_id is None:
             session_id = str(random.randint(1000, 999999))
-            sessions[call_sid] = session_id
-
+            sessions[call_sid]['session'] = session_id
+        
+        sessions[call_sid]['user_id'] = user_id
+        sessions[call_sid]['prompt_data'] = prompt_data
+        sessions[call_sid]['data_pdf_path'] = data_pdf_path
+        sessions[call_sid]['location_id'] = location_id
+        sessions[call_sid]['api_key'] = api_key  
+        sessions[call_sid]['date_extract'] = date_extract 
+        sessions[call_sid]['chat_history'] = chat_history  
+        sessions[call_sid]['company_id'] = company_id
+        sessions[call_sid]['company_name'] = company_name     
+        
         with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='auto', action='/handle-voice') as gather:
-            gather.say(call_handler.run_assistant(session_id, ques='Initial Greeting'),language='en-US')
+            gather.say(call_handler.run_assistant(call_sid, ques='Initial Greeting'),language='en-US')
+    
     except Exception as e:
         print("Error" , e)
         response.say("There was an error processing your request . Please try again later.",language='en-US')
@@ -486,43 +507,35 @@ def voice():
 
 @app.route('/handle-voice', methods=['GET' , 'POST'])
 def handle_voice_input():
-    """Handle user input during the call."""
     response = VoiceResponse()
+    
     speech_result = request.form.get('SpeechResult')
     confidence_score = float(request.form.get('Confidence', 0.0))
     call_sid = request.form.get('CallSid')
-    from_sid = request.form.get('From')
-    session_id = sessions.get(call_sid, None)
+    session_id = sessions[call_sid]['session']
 
-
-
-    if not session_id:
+    if session_id is None:
         session_id = str(random.randint(1000, 999999))
-        sessions[call_sid] = session_id
+        sessions[call_sid]['session'] = session_id
 
     if confidence_score > 0.60 and speech_result:
         
-        ai_response = call_handler.run_assistant(session_id, speech_result)
-        print("chat_history:", sessions[session_id])
-        
+        ai_response = call_handler.run_assistant(call_sid, speech_result)
         print()
-        print()
-        print("===============================================unknown",ai_response)
-        print()
+        print("===========================================================")
+        print("AI Response:", ai_response)
+        print("===========================================================")
         print()
         handler = "/handle-voice"
-        inf_1 = "I can help you with that"
-        if inf_1.lower() in ai_response.lower():
+        if "I can help you with that".lower() in ai_response.lower():
             handler = "contact-information" 
             with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='auto', action=handler) as gather:
                 gather.say(ai_response, language='en-US')
-            
-        
+    
         else:
             with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='auto', action=handler) as gather:
                 gather.say(ai_response, language='en-US')
-        
-        
+             
     else:
         with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='auto', action="/handle-voice") as gather:
             gather.say("No voice input received. Please try again.")
@@ -531,51 +544,49 @@ def handle_voice_input():
 
 @app.route('/contact-information', methods=['GET', 'POST'])
 def contact_information():
-    global date_new
     response = VoiceResponse()
-
     speech_result = request.form.get('SpeechResult')
     confidence_score = float(request.form.get('Confidence', 0.0))
     call_sid = request.form.get('CallSid')
-    session_id = sessions.get(call_sid, None)
-    caller_number = request.form.get('From')
-    company_number = request.form.get('ForwardedFrom')
-    print("111111111111111111111111111111111111111111111111speech_result",speech_result)
+    customer_number = request.form.get('From')
+    session_id = sessions[call_sid]['session']
+
+    if session_id is None:
+        session_id = str(random.randint(1000, 999999))
+        sessions[call_sid]['session'] = session_id
+    
+    print()   
+    print("===========================================================")
+    print("User Response:", speech_result)
+    print("===========================================================")
+    print()
+    
     date = call_handler.extract_date(speech_result)
 
-    print()
-    print()
-    print()
-    print()
-    print()
-    print("phone_number is =========================================",company_number)
-    print()
-    print()
-    print()
-    print()
-    print()
-
-    if not session_id:
-        session_id = str(random.randint(1000, 999999))
-        sessions[call_sid] = session_id
-    
-    
-    
     if date is not None:
-        date_new = date
-
+        sessions[call_sid]['date_extract'] = date
+    
+    date_extract = sessions[call_sid]['date_extract']
+    print()   
+    print("===========================================================")
+    print("Date Extracted", date_extract)
+    print("===========================================================")
+    print()
     handler = "contact-information" 
     if confidence_score > 0.60 and speech_result:
         
-        ai_response = call_handler.run_assistant(session_id, speech_result)
-        print("chat_history:", sessions[session_id])
+        ai_response = call_handler.run_assistant(call_sid, speech_result)
+        print()
+        print("===========================================================")
+        print("AI Response:", ai_response)
+        print("===========================================================")
+        print()
         handler = "contact-information" 
         
-        # file_name = "C://Users//akash//OneDrive//Desktop//Availably-Voicebot-GEITPL//user_appoint_data//"+"availbaly"+from_sid+".json"
-        file_name = "/home/akash_raut/voicebot/pdf_data/user_appoint_data/"+caller_number+"+"+company_number+".json"
-        # inf = "detailed information"
-        if "detailed information".lower() in ai_response.lower() or "Here is a summary".lower() in ai_response.lower():
-            print("Entered")
+        file_name = "D:/GEITPL/AvailablyVoiceBot-GEITPL/AI-Voicebot-GEITPL/AI_BOT/pdf_data/user_appoint_data/"+customer_number+"+"+call_sid+".json"
+        sessions[call_sid]['file_name'] = file_name  
+        
+        if "detailed information".lower() in ai_response.lower() or "Here is the Summary".lower() in ai_response.lower():
             lines = ai_response.split('\n')
 
             # Initialize an empty dictionary to store appointment information
@@ -587,189 +598,262 @@ def contact_information():
                 if ':' not in line:
                     continue
                 key, value = line.split(':', 1)
-                # if 
                 appointment_info[key.strip()] = value.strip()
-            appointment_info["Date Selected"] = date_new
-            # Store appointment information in JSON file
+            appointment_info["Date Selected"] = date_extract
             
-            # with open(file_name, 'w') as json_file:
-            #     json.dump(appointment_info, json_file, indent=4)
             
-            contact_info = call_handler.get_subaccount_info(appointment_info , caller_number) 
-            
-            print()
-            print()
+            contact_info = appointment_handler.get_subaccount_info(call_sid , appointment_info , customer_number) 
             print()   
-            print("===========================================9999999999999",contact_info)
+            print("===========================================================")
+            print("Contact Information:", contact_info)
+            print("===========================================================")
             print()
-            print()
-            print() 
-
+            
             with open(file_name, 'w') as json_file:
                 json.dump(contact_info, json_file, indent=4)
-
-            _ , status_code = call_handler.create_contact(contact_info)
-
-        
-            # Check the response status code
-            if status_code == 200:
-                print("Contact updated successfully")
-            elif status_code == 201:
-                print("Contact created successfully")
-            else:
-                print("Failed to create or update contact")
             
+            appointment_handler.contact_id_generate(customer_number , call_sid , contact_info)
+            # call_handler.create_contact(call_sid , contact_info)
+            ai_response = "Please wait , while I am fixing the appointment for you"
+            handler = "/appointment-confirmation"
+            # return redirect(url_for('appointment_confirmation' , call_sid=call_sid))
+        
         with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='auto', action=handler) as gather:
             gather.say(ai_response, language='en-US')
         
     else:
         with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='auto', action=handler) as gather:
-            gather.say("No voice input received. Please try again.", language='en-US')
+            gather.say("No voice input received. Please try again.")
     
      
     return str(response)
 
-@app.route('/modify-prompt', methods=['POST'])
-def modify_prompt():
-    # Retrieve data from the POST request
-    directory_file = request.files.get("directory_file")
-    prompt_file = request.files.get("prompt_file")
-    phone_number = request.form.get("phone_number")
-    phone_number = phone_number.replace("-", "")
+@app.route('/appointment-confirmation', methods=['GET' , 'POST'])
+def appointment_confirmation(): 
+    response = VoiceResponse()
+    speech_result = request.form.get('SpeechResult')
+    call_sid = request.form.get('CallSid')
+    # customer_number = request.form.get('From')
+    # company_number = request.form.get('ForwardedFrom')
+    # response.play('https://cdn.freesound.org/previews/686/686020_1954411-lq.mp3')
+    queue = Queue()
     
+    def background_task():
+        # Do your background task here
+        result = appointment_handler.background_task(call_sid)
 
-    # Check if required data is present
-    if phone_number is None:
-        return jsonify({"error": "Phone number is required"}), 400
+        # Put the result in the queue
+        queue.put(result)
 
-    # Replace these values with your PostgreSQL database information
-    db_params = constants.db_params
+    # Start a background task
+    threading.Thread(target=background_task).start()
+    result = queue.get()
+    text , get_free_slots , calendars_id , slot = result
+    sessions[call_sid]['get_free_slots'] = get_free_slots
+    sessions[call_sid]['calendars_id'] = calendars_id
+    sessions[call_sid]['slot'] = slot
 
-    try:
-        # Create a connection to the database
-        connection = psycopg2.connect(**db_params)
-        print("Connected to the database!")
-
-        # Create a cursor
-        cursor = connection.cursor()
-
-        # Check if the phonenumbers table exists, if not, create it
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS company_data (
-                user_id VARCHAR PRIMARY KEY,
-                phone_number VARCHAR(20) UNIQUE,
-                prompt_file VARCHAR,
-                prompt_file_path TEXT,
-                directory_file VARCHAR,
-                data_file_path TEXT,
-                location_id TEXT,
-                api_key TEXT
-            )
-        """)
-
-        # Check if the phone number exists in the database
-        cursor.execute("SELECT * FROM company_data WHERE phone_number = %s", (phone_number,))
-        existing_record = cursor.fetchone()
-        pdf_directory = "/home/akash_raut/voicebot/pdf_data/prompt_data/"
-        data_directory = "/home/akash_raut/voicebot/pdf_data/datafile_data/"
-        prompt_path = None
-        data_path = None
-
-        if existing_record:
-            # If record exists, update it with the new PDF file if provided
-            if prompt_file.filename and not directory_file.filename:
-                prompt_path = os.path.join(pdf_directory, prompt_file.filename)
-                prompt_file.save(prompt_path)
-                cursor.execute("UPDATE company_data SET prompt_file = %s , prompt_file_path = %s WHERE phone_number = %s",
-                            (prompt_file.filename, prompt_path, phone_number))
-            elif directory_file.filename and not prompt_file.filename:
-                data_path = os.path.join(data_directory, directory_file.filename)
-                directory_file.save(data_path)
-                cursor.execute("UPDATE company_data SET directory_file = %s , data_file_path = %s WHERE phone_number = %s",
-                            (directory_file.filename, data_path, phone_number))
-            else:
-                prompt_path = os.path.join(pdf_directory, prompt_file.filename)
-                prompt_file.save(prompt_path)
-                data_path = os.path.join(data_directory, directory_file.filename)
-                directory_file.save(data_path)
-                cursor.execute("UPDATE company_data SET prompt_file = %s , prompt_file_path = %s ,  directory_file = %s , data_file_path = %s WHERE phone_number = %s",
-                        (prompt_file.filename, prompt_path, directory_file.filename, data_path, phone_number))
-            
-        else:
-            # If record doesn't exist, insert a new record
-            if prompt_file.filename and not directory_file.filename:
-                prompt_path = os.path.join(pdf_directory, prompt_file.filename)
-                prompt_file.save(prompt_path)
-                cursor.execute("INSERT INTO company_data (user_id , phone_number, prompt_file , prompt_file_path) VALUES (%s, %s, %s , %s)",
-                        (call_handler.user_id_generate(), phone_number, prompt_file.filename, prompt_path))
-            elif directory_file.filename and not prompt_file.filename:
-                data_path = os.path.join(data_directory, directory_file.filename)
-                directory_file.save(data_path)
-                cursor.execute("INSERT INTO company_data (user_id , phone_number, directory_file , data_file_path) VALUES (%s, %s, %s , %s)",
-                        (call_handler.user_id_generate(), phone_number, directory_file.filename, data_path))
-            else:
-                prompt_path = os.path.join(pdf_directory, prompt_file.filename)
-                prompt_file.save(prompt_path)
-                data_path = os.path.join(data_directory, directory_file.filename)
-                directory_file.save(data_path)
-                cursor.execute("INSERT INTO company_data (user_id , phone_number, prompt_file , prompt_file_path , directory_file , data_file_path) VALUES (%s, %s, %s , %s , %s , %s)",
-                        (call_handler.user_id_generate(), phone_number, prompt_file.filename, prompt_path, directory_file.filename, data_path))
-
-        connection.commit()
-        print("Data saved successfully!")
-        return jsonify({"message": "Data added or updated successfully"}), 200
-
-    except Error as e:
-        print("Error connecting to the database:", e)
-        return jsonify({"error": "Error connecting to the database"}), 500
-
-    finally:
-        # Close the cursor and connection
-        if connection:
-            cursor.close()
-            connection.close()
-            print("Connection closed.")
-
-@app.route('/get-user-phone-list', methods=['GET'])
-def get_user_phone_list():
-    try:
-        db_params = constants.db_params
+    if "Time SLot is Available".lower() in text.lower():
+        ai_ask = "Do you want to fix the appointment for you? , Please say Yes or No"
+        handler = "/appointment-fixed"
         
-        # Create a connection to the database
-        connection = psycopg2.connect(**db_params)
+    elif "Time SLot is not Available".lower() in text.lower():
+        ai_ask = "This time slot is not available. Would you like me to schedule appointment which is nearest to your mentioned time slot? Please say Yes or No"
+        handler = "/appointment-fixed"
+    
+    with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='auto', action=handler) as gather:
+        gather.say(ai_ask , language='en-US')
+    
+    return str(response)
 
-        # Create a cursor
-        cursor = connection.cursor()
+@app.route('/appointment-fixed', methods=['POST'])
+def appointment_fixed():
+    response = VoiceResponse()
+    speech_result = request.form.get('SpeechResult')
+    call_sid = request.form.get('CallSid')
+    get_free_slots = sessions[call_sid]['get_free_slots']
+    calendars_id = sessions[call_sid]['calendars_id'] 
+    slot = sessions[call_sid]['slot']
+    if any(word in speech_result.lower() for word in ['yes', 'yeah', 'sure', 'okay', 'ok']): 
+            if slot.lower() == "No time slot is available".lower():
+                slot = get_free_slots[0]
+            appointment_create = AppointmentHandler()
+            status_code = appointment_create.create_appointment(call_sid , calendars_id  , slot)
+            # Check the response status code
+            if status_code == 201:
+                print("Contact created successfully")
+                ai_ask = "Your appointment has been fixed successfully. Thank you for using our service. , if you want to know more about our service feel free to ask"
+                handler = "/handle-voice"
+            else:
+                print("Failed to create or update contact")
+                ai_ask = "Sorry, I was unable to fix the appointment. Please try again later."
+                handler = "/handle-voice"
+    elif any(word in speech_result.lower() for word in ['no', 'nope', 'not', 'cancel']):
+        ai_ask = "Thank you for using our service. If you want to know more about our service feel free to ask"
+        handler = "/handle-voice"
 
-        # Check if the phonenumbers table exists, if not, create it
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS company_data (
-                user_id VARCHAR PRIMARY KEY,
-                phone_number VARCHAR(20) UNIQUE,
-                prompt_file VARCHAR,
-                prompt_file_path TEXT,
-                directory_file VARCHAR,
-                data_file_path TEXT
-                location_id TEXT,
-                api_key TEXT
-            )
-        """)
+    with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='auto', action=handler) as gather:
+        gather.say(ai_ask , language='en-US')
 
-        # Retrieve the user_id, phone_number, and prompt_file from the database
-        cursor.execute("SELECT user_id, phone_number, prompt_file , directory_file FROM company_data")
-        records = cursor.fetchall()
+    return str(response)
 
-        user_phone_list = [{"user_id": record[0], "phone_number": record[1], "prompt_file": record[2] , "directory_file": record[3]} for record in records]
-        return jsonify({"user_phone_list": user_phone_list}), 200
+# @app.route('/modify-prompt', methods=['POST'])
+# def modify_prompt():
+#     # Retrieve data from the POST request
+#     directory_file = request.files.get("directory_file")
+#     prompt_file = request.files.get("prompt_file")
+#     phone_number = request.form.get("phone_number")
+#     phone_number = phone_number.replace("-", "")
 
-    except Error as e:
-        return jsonify({"error": "Error connecting to the database"}), 500
+#     # Check if required data is present
+#     if phone_number is None:
+#         return jsonify({"error": "Phone number is required"}), 400
 
-    finally:
-        # Close the cursor and connection
-        if connection:
-            cursor.close()
-            connection.close()
+#     # Replace these values with your PostgreSQL database information
+#     db_params = constants.db_params
+
+#     try:
+#         # Create a connection to the database
+#         connection = psycopg2.connect(**db_params)
+#         print()
+#         print("===========================================================")
+#         print("Connected to the database!")
+#         print("===========================================================")
+#         print()
+#         # Create a cursor
+#         cursor = connection.cursor()
+
+#         # Check if the phonenumbers table exists, if not, create it
+#         cursor.execute("""
+#             CREATE TABLE IF NOT EXISTS company_data (
+#                 user_id VARCHAR PRIMARY KEY,
+#                 company_name TEXT,
+#                 phone_number VARCHAR(20) UNIQUE,
+#                 prompt_file VARCHAR,
+#                 prompt_file_path TEXT,
+#                 directory_file VARCHAR,
+#                 data_file_path TEXT,
+#                 location_id TEXT,
+#                 api_key TEXT
+#             )
+#         """)
+
+#         # Check if the phone number exists in the database
+#         cursor.execute("SELECT * FROM company_data WHERE phone_number = %s", (phone_number,))
+#         existing_record = cursor.fetchone()
+#         pdf_directory = "D:/GEITPL/AvailablyVoiceBot-GEITPL/AI-Voicebot-GEITPL/AI_BOT/pdf_data/prompt_data/"
+#         data_directory = "D:/GEITPL/AvailablyVoiceBot-GEITPL/AI-Voicebot-GEITPL/AI_BOT/pdf_data/datafile_data/"
+#         prompt_path = None
+#         data_path = None
+
+#         if existing_record:
+#             # If record exists, update it with the new PDF file if provided
+#             if prompt_file.filename and not directory_file.filename:
+#                 prompt_path = os.path.join(pdf_directory, prompt_file.filename)
+#                 prompt_file.save(prompt_path)
+#                 cursor.execute("UPDATE company_data SET prompt_file = %s , prompt_file_path = %s WHERE phone_number = %s",
+#                             (prompt_file.filename, prompt_path, phone_number))
+#             elif directory_file.filename and not prompt_file.filename:
+#                 data_path = os.path.join(data_directory, directory_file.filename)
+#                 directory_file.save(data_path)
+#                 cursor.execute("UPDATE company_data SET directory_file = %s , data_file_path = %s WHERE phone_number = %s",
+#                             (directory_file.filename, data_path, phone_number))
+#             else:
+#                 prompt_path = os.path.join(pdf_directory, prompt_file.filename)
+#                 prompt_file.save(prompt_path)
+#                 data_path = os.path.join(data_directory, directory_file.filename)
+#                 directory_file.save(data_path)
+#                 cursor.execute("UPDATE company_data SET prompt_file = %s , prompt_file_path = %s ,  directory_file = %s , data_file_path = %s WHERE phone_number = %s",
+#                         (prompt_file.filename, prompt_path, directory_file.filename, data_path, phone_number))
+            
+#         else:
+#             # If record doesn't exist, insert a new record
+#             if prompt_file.filename and not directory_file.filename:
+#                 prompt_path = os.path.join(pdf_directory, prompt_file.filename)
+#                 prompt_file.save(prompt_path)
+#                 cursor.execute("INSERT INTO company_data (user_id , phone_number, prompt_file , prompt_file_path) VALUES (%s, %s, %s , %s)",
+#                         (call_handler.user_id_generate(), phone_number, prompt_file.filename, prompt_path))
+#             elif directory_file.filename and not prompt_file.filename:
+#                 data_path = os.path.join(data_directory, directory_file.filename)
+#                 directory_file.save(data_path)
+#                 cursor.execute("INSERT INTO company_data (user_id , phone_number, directory_file , data_file_path) VALUES (%s, %s, %s , %s)",
+#                         (call_handler.user_id_generate(), phone_number, directory_file.filename, data_path))
+#             else:
+#                 prompt_path = os.path.join(pdf_directory, prompt_file.filename)
+#                 prompt_file.save(prompt_path)
+#                 data_path = os.path.join(data_directory, directory_file.filename)
+#                 directory_file.save(data_path)
+#                 cursor.execute("INSERT INTO company_data (user_id , phone_number, prompt_file , prompt_file_path , directory_file , data_file_path) VALUES (%s, %s, %s , %s , %s , %s)",
+#                         (call_handler.user_id_generate(), phone_number, prompt_file.filename, prompt_path, directory_file.filename, data_path))
+
+#         connection.commit()
+#         print()
+#         print("===========================================================")
+#         print("Data saved successfully!")
+#         print("===========================================================")
+#         print()
+#         return jsonify({"message": "Data added or updated successfully"}), 200
+
+#     except Error as e:
+#         print()
+#         print("===========================================================")
+#         print("Error connecting to the database:", e)
+#         print("===========================================================")
+#         print()
+#         return jsonify({"error": "Error connecting to the database"}), 500
+
+#     finally:
+#         # Close the cursor and connection
+#         if connection:
+#             cursor.close()
+#             connection.close()
+#             print()
+#             print("===========================================================")
+#             print("Connection closed.")
+#             print("===========================================================")
+#             print()
+            
+# @app.route('/get-user-phone-list', methods=['GET'])
+# def get_user_phone_list():
+    # try:
+    #     db_params = constants.db_params
+        
+    #     # Create a connection to the database
+    #     connection = psycopg2.connect(**db_params)
+
+    #     # Create a cursor
+    #     cursor = connection.cursor()
+
+    #     # Check if the phonenumbers table exists, if not, create it
+    #     cursor.execute("""
+    #         CREATE TABLE IF NOT EXISTS company_data (
+    #             user_id VARCHAR PRIMARY KEY,
+    #             company_name TEXT,
+    #             phone_number VARCHAR(20) UNIQUE,
+    #             prompt_file VARCHAR,
+    #             prompt_file_path TEXT,
+    #             directory_file VARCHAR,
+    #             data_file_path TEXT
+    #             location_id TEXT,
+    #             api_key TEXT
+    #         )
+    #     """)
+
+    #     # Retrieve the user_id, phone_number, and prompt_file from the database
+    #     cursor.execute("SELECT user_id, phone_number, prompt_file , directory_file FROM company_data")
+    #     records = cursor.fetchall()
+
+    #     user_phone_list = [{"user_id": record[0], "phone_number": record[1], "prompt_file": record[2] , "directory_file": record[3]} for record in records]
+    #     return jsonify({"user_phone_list": user_phone_list}), 200
+
+    # except Error as e:
+    #     return jsonify({"error": "Error connecting to the database"}), 500
+
+    # finally:
+    #     # Close the cursor and connection
+    #     if connection:
+    #         cursor.close()
+    #         connection.close()
 
 if __name__ == "__main__":
     app.run(host="localhost", port=3000, debug=False)
