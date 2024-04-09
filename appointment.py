@@ -3,7 +3,7 @@ from logic import *
 
 GHL_APPOINTMENTS_URL = constants.GHL_APPOINTMENTS_URL
 
-class AppointmentHandler:
+class GHLAppointmentHandler:
 
     def __init__(self):
         pass

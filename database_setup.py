@@ -132,7 +132,8 @@ def customer_data_create():
                 company_id VARCHAR(255) NOT NULL,
                 company_name TEXT NOT NULL,
                 phone_number VARCHAR(20) UNIQUE,
-                contact_id TEXT UNIQUE
+                contact_id TEXT UNIQUE,
+                location_id TEXT NOT NULL
             )
         """)    
         connection.commit()
