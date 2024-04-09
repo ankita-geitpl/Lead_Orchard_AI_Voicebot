@@ -1,6 +1,7 @@
 from dependency import *
 import constants
 from ghl_calendar_api import *
+from prompt import prompts
 
 openai_api_key = os.environ["OPENAI_API_KEY"] = constants.APIKEY
 GOHIGHLEVEL_API_URL = constants.GOHIGHLEVEL_API_URL
@@ -188,6 +189,157 @@ class GHLSlotsHandler:
     def __init__(self):
         pass
     
+    def contact_id_generate(self , phone_number , call_sid , data):
+        # Replace these values with your PostgreSQL database information
+        db_params = constants.db_params
+        try:
+            # Create a connection to the database
+            connection = psycopg2.connect(**db_params)
+            print()
+            print("===========================================================")
+            print("Connected to the database!")
+            print("===========================================================")
+            print()
+            # Create a cursor
+            cursor = connection.cursor()
+
+            # # Check if the phonenumbers table exists, if not, create it
+            # cursor.execute("""
+            #     CREATE TABLE IF NOT EXISTS customer_data (
+            #         user_id VARCHAR(255) NOT NULL,
+            #         phone_number VARCHAR(20) UNIQUE,
+            #         contact_id TEXT UNIQUE
+            #     )
+            # """)    
+            #  # Check if the phone number exists in the database
+            cursor.execute("SELECT * FROM customer_data WHERE phone_number = %s", (phone_number,))
+            existing_record = cursor.fetchone()
+            if existing_record:
+                cursor.execute("SELECT contact_id FROM customer_data WHERE phone_number = %s", (phone_number,))
+                retrieve_data = cursor.fetchone()
+                contact_id = retrieve_data[0]
+                self.update_contact(call_sid , contact_id , data)
+                sessions[call_sid]['contact_id'] = contact_id
+            else:
+                contact_id = self.create_contact(call_sid , data)
+                company_id = sessions[call_sid]['company_id']
+                company_name = sessions[call_sid]['company_name']
+                cursor.execute("INSERT INTO customer_data (company_id , company_name , phone_number, contact_id) VALUES (%s, %s, %s , %s)", (company_id , company_name , phone_number, contact_id))
+                sessions[call_sid]['contact_id'] = contact_id
+            connection.commit()
+            print()
+            print("===========================================================")
+            print("Data saved successfully!")
+            print("===========================================================")
+            print()
+
+        except Error as e:
+            print()
+            print("===========================================================")
+            print("Error connecting to the database:", e)
+            print("===========================================================")
+            print()
+        finally:
+            # Close the cursor and connection
+            if connection:
+                cursor.close()
+                connection.close()
+                print()
+                print("===========================================================")
+                print("Connection closed.")
+                print("===========================================================")
+                print()
+                    
+    def get_subaccount_info(self , call_sid , appointment_info , customer_number):
+        email = None
+        data_dict_clean = {key.lstrip('- '): value if '-' in key else value for key, value in appointment_info.items()}
+        
+        # Access the values using the keys
+        first_name = data_dict_clean["First Name"]
+        last_name = data_dict_clean["Last Name"]
+        company_name = data_dict_clean["Company Name"]
+        date_selected = data_dict_clean["Date Selected"]
+        time_selected = data_dict_clean["Time Selected"]
+        location_id = sessions[call_sid]['location_id']
+        contact_data = {
+            "phone": customer_number,
+            "firstName": first_name,
+            "lastName": last_name,
+            "name": first_name + " " + last_name,
+            "locationId": location_id,
+            "companyName": company_name,
+            "dateSelected": date_selected,
+            "timeSelected": time_selected,
+            "email": email,
+            "tags": [
+                    "By AI softwere"
+                    ]
+        }
+        return contact_data
+
+    def create_contact(self , call_sid , user_data):
+        api_key = sessions[call_sid]['api_key']
+        conn = http.client.HTTPSConnection("services.leadconnectorhq.com")
+
+        payload = user_data
+        keys_to_remove = ['dateSelected', 'timeSelected']
+        for key in keys_to_remove:
+            payload.pop(key)
+
+        headers = {
+            'Authorization': f"Bearer {api_key}",
+            'Version': "2021-07-28",
+            'Content-Type': "application/json",
+            'Accept': "application/json"
+        }
+
+        conn.request("POST", "/contacts/", json.dumps(payload), headers)
+
+        res = conn.getresponse()
+        data = res.read()
+        print("+++++++++++++++++data:",data)
+        response_dict = json.loads(data.decode('utf-8'))
+        contact_id = response_dict['contact']['id']
+        print("======================================================" , response_dict)
+        if res.status == 201 or res.status == 200:
+            print()   
+            print("===========================================================")
+            print("Contact created successfully!")
+            print("===========================================================")
+            print()
+        return contact_id
+            
+    def update_contact(self , call_sid , contact_id , user_data):
+        api_key = sessions[call_sid]['api_key']
+        conn = http.client.HTTPSConnection("services.leadconnectorhq.com")
+
+        payload = user_data
+        keys_to_remove = ['dateSelected', 'timeSelected' , 'locationId']
+        for key in keys_to_remove:
+            payload.pop(key)
+            
+        headers = {
+            'Authorization': f"Bearer {api_key}",
+            'Version': "2021-07-28",
+            'Content-Type': "application/json",
+            'Accept': "application/json"
+        }
+        
+        headers = {'Authorization': f"Bearer {api_key}",'Version': "2021-07-28",'Content-Type': "application/json",'Accept': "application/json"}
+
+        conn.request("PUT", f"/contacts/{contact_id}", json.dumps(payload), headers)
+
+        res = conn.getresponse()
+        # import pdb; pdb.set_trace()
+        data = res.read()
+
+        if res.status == 201 or res.status == 200:
+            print()   
+            print("===========================================================")
+            print("Contact updated successfully!")
+            print("===========================================================")
+            print()
+    
     def get_user_id(self , call_sid):
         api_key = sessions[call_sid]['api_key']
         location_id = sessions[call_sid]['location_id']
@@ -219,6 +371,6 @@ class GHLSlotsHandler:
         calendars_id = ghl_calender.get_calender(location_id , api_key)
         start_date, end_date, time_24h_format , date_selected = ghl_calender.get_date_time(file_path)
         slot , get_free_slots , text = ghl_calender.fetch_available_slots(calendars_id , api_key , start_date, end_date, time_24h_format, date_selected)
-        print(get_free_slots)
+        print("get_free_slots :",get_free_slots)
         time.sleep(5)
         return text , get_free_slots , calendars_id , slot
