@@ -473,12 +473,12 @@ def voice():
     to_num = request.form.get('To')
     print()
     print("===========================================================")
-    print("Forwarded From : ",company_number)
+    print("Forwarded From : ",to_num)
     print("===========================================================")
     print()
     
     session_id = None
-    user_id , prompt_data , data_pdf_path , location_id , company_id , company_name , api_key = call_handler.get_prompt_file(company_number)
+    user_id , prompt_data , data_pdf_path , location_id , company_id , company_name , api_key = call_handler.get_prompt_file(to_num)
     if call_sid not in sessions:
         sessions[call_sid] = {}
     try:
@@ -583,7 +583,7 @@ def contact_information():
         print()
         handler = "contact-information" 
         
-        file_name = "/home/akash_raut/voicebot/pdf_data/user_appoint_data/"+customer_number+"+"+call_sid+".json"
+        file_name = "C://Users//akash//OneDrive//Desktop//Lead_Orchard_AI_Voicebot//pdf_data//user_appoint_data//"+customer_number+"+"+call_sid+".json"
         sessions[call_sid]['file_name'] = file_name  
         
         if "detailed information".lower() in ai_response.lower() or "Here is the Summary".lower() in ai_response.lower():
