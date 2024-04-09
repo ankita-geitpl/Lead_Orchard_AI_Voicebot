@@ -1,6 +1,7 @@
 from dependency import *
 import constants
 from ghl_calendar_api import *
+from prompt import prompts
 
 openai_api_key = os.environ["OPENAI_API_KEY"] = constants.APIKEY
 GOHIGHLEVEL_API_URL = constants.GOHIGHLEVEL_API_URL
@@ -251,6 +252,7 @@ class GHLAppointmentHandler:
                 print()
                     
     def get_subaccount_info(self , call_sid , appointment_info , customer_number):
+        email = None
         data_dict_clean = {key.lstrip('- '): value if '-' in key else value for key, value in appointment_info.items()}
         
         # Access the values using the keys
@@ -260,7 +262,6 @@ class GHLAppointmentHandler:
         date_selected = data_dict_clean["Date Selected"]
         time_selected = data_dict_clean["Time Selected"]
         location_id = sessions[call_sid]['location_id']
-        email = "example@example.com"
         contact_data = {
             "phone": customer_number,
             "firstName": first_name,
@@ -297,8 +298,10 @@ class GHLAppointmentHandler:
 
         res = conn.getresponse()
         data = res.read()
+        print("+++++++++++++++++data:",data)
         response_dict = json.loads(data.decode('utf-8'))
         contact_id = response_dict['contact']['id']
+        print("======================================================" , response_dict)
         if res.status == 201 or res.status == 200:
             print()   
             print("===========================================================")
@@ -328,7 +331,7 @@ class GHLAppointmentHandler:
         conn.request("PUT", f"/contacts/{contact_id}", json.dumps(payload), headers)
 
         res = conn.getresponse()
-        import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
         data = res.read()
 
         if res.status == 201 or res.status == 200:
@@ -408,6 +411,6 @@ class GHLAppointmentHandler:
         calendars_id = ghl_calender.get_calender(location_id , api_key)
         start_date, end_date, time_24h_format , date_selected = ghl_calender.get_date_time(file_path)
         slot , get_free_slots , text = ghl_calender.fetch_available_slots(calendars_id , api_key , start_date, end_date, time_24h_format, date_selected)
-        print(get_free_slots)
+        print("get_free_slots :",get_free_slots)
         time.sleep(5)
         return text , get_free_slots , calendars_id , slot
