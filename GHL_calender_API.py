@@ -137,11 +137,7 @@ class GHLCalendarAPI:
             print("An error occurred while fetching available slots:", e)   
             print("===========================================================")
             print()
-<<<<<<< HEAD
             return "" , [] , "Time SLot is not Available"
-=======
-            return "", "", "An error occurred while fetching available slots"
->>>>>>> b8f2b3dfc46510064523efdb68166cd617835c47
 
 
 

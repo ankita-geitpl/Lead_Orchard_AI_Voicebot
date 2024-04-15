@@ -4,7 +4,7 @@ from logic import *
 from GHL_schedule_appointment import *
 from GHL_contact_create import *
 from GHL_task_notes_create import *
-from GHL_calendar_API import *
+from GHL_calender_API import *
 
 # Marketplace account
 CLIENT_ID = constants.MP_CLIENT_ID
@@ -460,7 +460,7 @@ def get_ai_numbers():
 @app.route('/voice', methods=['GET' , 'POST'])
 def voice():
     """Handle incoming voice call."""
-    global end_session_time , sessions
+    global end_session_time
 
     response = VoiceResponse()
     call_status = request.form.get('CallStatus')
@@ -580,8 +580,7 @@ def handle_voice_input():
                 key, value = line.split(':', 1)
                 task_info[key.strip()] = value.strip()
             
-            task_info["Due Date"] = sessions[call_sid]['due_date']
-            user_contact_info = task_create.get_clean_data(call_sid , task_info , customer_number , sessions[call_sid]['date_extract'])
+            user_contact_info = task_create.get_clean_data(call_sid , task_info , customer_number)
             
             if contact_id is not None:
                 contact_handler.update_contact(call_sid , sessions[call_sid]["contact_id"]  , user_contact_info)
@@ -599,37 +598,6 @@ def handle_voice_input():
                 call_handler.check_status(call_sid , request.form.get('CallStatus'))
                 with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='3', action=handler) as gather:
                     gather.say(ai_response, language='en-US')
-        
-        # if "" in ai_response.lower():
-        #     lines = ai_response.split('\n')
-        #     # Initialize an empty dictionary to store appointment information
-        #     note_info = {}
-        #     # Parse each line of the appointment information
-        #     for line in lines:
-        #         # Skip lines that don't contain a colon
-        #         if ':' not in line:
-        #             continue
-        #         key, value = line.split(':', 1)
-        #         note_info[key.strip()] = value.strip()
-        #     data_dict_clean = {key.lstrip('- '): value if '-' in key else value for key, value in note_info.items()}
-        #     title = data_dict_clean["Title"]
-        #     description = data_dict_clean["Description"]
-        #     contact_info = {
-        #         "title": title,
-        #         "body": description
-        #     }
-        #     if contact_id is not None:
-        #         task_create.create_notes(call_sid , contact_info)
-        #         handler = "/handle-voice "
-        #         with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='auto', action=handler) as gather:
-        #             gather.say(ai_response, language='en-US')
-        #     else:
-        #         contact_handler.contact_id_generate(customer_number , call_sid , contact_info)
-        #         contact_id = task_create.contact_id_check(call_sid , customer_number)
-        #         task_create.create_notes(call_sid , contact_info)
-        #         handler = "/handle-voice "
-        #         with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='auto', action=handler) as gather:
-        #             gather.say(ai_response, language='en-US')
         
         else:
             handler = "/handle-voice"
@@ -695,20 +663,10 @@ def contact_information():
         
         handler = "contact-information" 
         
-        file_name = "/home/akash_raut/voicebot/pdf_data/user_appoint_data/"+customer_number+"+"+local_company_number+".json"
+        file_name = "D:/GEITPL/AvailablyVoiceBot-GEITPL/AI-Voicebot-GEITPL/Lead_Orchard_AI_Voicebot/pdf_data/user_appoint_data/"+customer_number+"+"+local_company_number+".json"
         sessions[call_sid]['file_name'] = file_name  
         
         if "Here is the summary of scheduling details".lower() in ai_response.lower():
-            # lines = ai_response.split('\n')
-            # user_appointment_info = {}
-            # for line in lines:
-            #     if ':' not in line:
-            #         continue
-            #     key, value = line.split(':', 1)
-            #     user_appointment_info[key.strip()] = value.strip()
-            # user_appointment_info["Date Selected"] = date_extract
-            
-            
             user_contact_info = contact_handler.get_subaccount_info(call_sid , ai_response , customer_number , sessions[call_sid]['date_extract']) 
             
             print()   
@@ -726,17 +684,7 @@ def contact_information():
             
         
         elif "Here is the summary".lower() in ai_response.lower():
-            # lines = ai_response.split('\n')
-            # task_info = {}
-            
-            # for line in lines:
-            #     if ':' not in line:
-            #         continue
-            #     key, value = line.split(':', 1)
-            #     task_info[key.strip()] = value.strip()
-            
-            # task_info["Due Date"] = sessions[call_sid]['due_date']
-            user_contact_info = task_create.get_clean_data(call_sid , ai_response , customer_number , sessions[call_sid]['date_extract'])
+            user_contact_info = task_create.get_clean_data(call_sid , ai_response , customer_number)
             
             if contact_id is not None:
                 contact_handler.update_contact(call_sid , sessions[call_sid]["contact_id"]  , user_contact_info)

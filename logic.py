@@ -1,6 +1,6 @@
 from dependency import *
 import constants
-from GHL_calendar_API import *
+from GHL_calender_API import *
 # from GHL_task_notes_create import GHLTaskNotesHandler
 
 openai_api_key = os.environ["OPENAI_API_KEY"] = constants.APIKEY
@@ -20,7 +20,7 @@ class TwilioCallHandler:
     
     def check_status(self, call_sid , call_status):
         if call_status == "completed":
-            speech_input = """Your are a intelligent  bot for summering the conversation for the important key points of the conversation so Please summarize the conversation between the user and the voice bot, highlighting key points only. Don't take note of unnecessary points."""
+            speech_input = """Create notes summarizing a conversation between an AI assistant and a user discussing various aspects of the product, including product inquiries, pricing plans, onboarding processes, scheduling appointments, scheduling tasks, and note-taking. The notes should capture key points discussed in the conversation and present them in bullet points for easy reference."""
             ai_response = self.run_assistant(call_sid , speech_input)
             
             def create_notes(call_sid , ai_response):
