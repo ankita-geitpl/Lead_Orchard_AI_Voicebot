@@ -695,7 +695,7 @@ def contact_information():
         
         handler = "contact-information" 
         
-        file_name = "D:/GEITPL/AvailablyVoiceBot-GEITPL/AI-Voicebot-GEITPL/AI_BOT/pdf_data/user_appoint_data/"+customer_number+"+"+local_company_number+".json"
+        file_name = "/home/akash_raut/voicebot/pdf_data/user_appoint_data/"+customer_number+"+"+local_company_number+".json"
         sessions[call_sid]['file_name'] = file_name  
         
         if "Here is the summary of scheduling details".lower() in ai_response.lower():

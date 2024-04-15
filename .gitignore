@@ -1,4 +1,8 @@
 .env
 env/
 constants.py
+pdf_data/datafile_data/
+pdf_data/file_path/
+pdf_data/prompt_data/
 pdf_data/user_appoint_data/
+__pycache__
