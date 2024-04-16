@@ -1,5 +1,5 @@
 from dependency import *
-from logic import *
+from logic import sessions
 
 class GHLContactHandler:
     
@@ -160,13 +160,6 @@ class GHLContactHandler:
         time_selected = parsed_data.get("Time Selected")
         location_id = sessions[call_sid]['location_id']
         
-        # # Access the values using the keys
-        # first_name = user_data_clean["First Name"]
-        # last_name = user_data_clean["Last Name"]
-        # company_name = user_data_clean["Company Name"]
-        # date_selected = user_data_clean["Date Selected"]
-        # time_selected = user_data_clean["Time Selected"]
-        # location_id = sessions[call_sid]['location_id']
         if date_selected is None:
             date_selected = datetime.datetime.now().strftime("%d-%m-%Y")
         
@@ -240,7 +233,11 @@ class GHLContactHandler:
         conn.request("PUT", f"/contacts/{contact_id}", json.dumps(user_contact_info), headers)
 
         res = conn.getresponse()
-
+        import pdb; pdb.set_trace()
+        data = res.read()
+        print(data.decode("utf-8"))
+        
+        
         if res.status == 201 or res.status == 200:
             print()   
             print("===========================================================")

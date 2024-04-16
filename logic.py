@@ -1,6 +1,6 @@
 from dependency import *
 import constants
-from GHL_calender_API import *
+from GHL_calendar_API import *
 
 
 openai_api_key = os.environ["OPENAI_API_KEY"] = constants.APIKEY

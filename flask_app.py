@@ -3,9 +3,9 @@ from dependency import *
 from logic import *
 
 from GHL_schedule_appointment import *
-from GHL_contact_create import *
+from ghl_contact_create import *
 from GHL_task_notes_create import *
-from GHL_calender_API import *
+from GHL_calendar_API import *
 from user_ai_consum import *
 from Availably_UI import *
 
@@ -126,11 +126,11 @@ def handle_voice_input():
         
         if "I can help you with that".lower() in ai_response.lower():
             handler = "contact-information"
-            call_handler.user_ai_summary(call_sid , request.form.get('CallStatus')) 
+            user_ai_summary.summary(call_sid , request.form.get('CallStatus')) 
             with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='3', action=handler) as gather:
                 gather.say(ai_response, language='en-US')
         
-        if "Here is the summary".lower() in ai_response.lower():
+        if "summary of your task".lower() in ai_response.lower():
             lines = ai_response.split('\n')
             task_info = {}
             
@@ -146,7 +146,7 @@ def handle_voice_input():
                 contact_handler.update_contact(call_sid , sessions[call_sid]["contact_id"]  , user_contact_info)
                 ai_response = task_create.create_task(call_sid , user_contact_info)
                 handler = "/handle-voice"
-                call_handler.user_ai_summary(call_sid , request.form.get('CallStatus'))
+                user_ai_summary.summary(call_sid , request.form.get('CallStatus')) 
                 with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='3', action=handler) as gather:
                     gather.say(ai_response, language='en-US')
             
@@ -155,20 +155,20 @@ def handle_voice_input():
                 contact_id = task_create.contact_id_check(call_sid , customer_number)
                 ai_response = task_create.create_task(call_sid , user_contact_info)
                 handler = "/handle-voice"
-                call_handler.user_ai_summary(call_sid , request.form.get('CallStatus'))
+                user_ai_summary.summary(call_sid , request.form.get('CallStatus')) 
                 with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='3', action=handler) as gather:
                     gather.say(ai_response, language='en-US')
         
         else:
             handler = "/handle-voice"
-            call_handler.user_ai_summary(call_sid , request.form.get('CallStatus'))
+            user_ai_summary.summary(call_sid , request.form.get('CallStatus')) 
             with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='3', action=handler) as gather:
                 gather.say(ai_response, language='en-US')
              
     else:
         ai_response = "No voice input received. Please try again."
         handler = "/handle-voice"
-        call_handler.user_ai_summary(call_sid , request.form.get('CallStatus'))
+        user_ai_summary.summary(call_sid , request.form.get('CallStatus')) 
         with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='3', action=handler) as gather:
             gather.say(ai_response, language='en-US')
             
@@ -243,7 +243,7 @@ def contact_information():
             handler = "/appointment-confirmation"
             
         
-        elif "Here is the summary".lower() in ai_response.lower():
+        elif "summary of your task".lower() in ai_response.lower():
             user_contact_info = task_create.get_clean_data(call_sid , ai_response , customer_number)
             
             if contact_id is not None:
@@ -257,14 +257,14 @@ def contact_information():
                 ai_response = task_create.create_task(call_sid , user_contact_info)
                 handler = "/handle-voice"
         
-        call_handler.user_ai_summary(call_sid , request.form.get('CallStatus'))
+        user_ai_summary.summary(call_sid , request.form.get('CallStatus')) 
         with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='3', action=handler) as gather:
             gather.say(ai_response, language='en-US')
         
     else:
         ai_response = "No voice input received. Please try again."
         handler = "/contact-information"
-        call_handler.user_ai_summary(call_sid , request.form.get('CallStatus'))
+        user_ai_summary.summary(call_sid , request.form.get('CallStatus')) 
         with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='3', action=handler) as gather:
             gather.say(ai_response, language='en-US')
             
@@ -302,7 +302,7 @@ def appointment_confirmation():
         
     handler = "/appointment-fixed"
     
-    call_handler.user_ai_summary(call_sid , request.form.get('CallStatus'))
+    user_ai_summary.summary(call_sid , request.form.get('CallStatus'))
     with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='3', action=handler) as gather:
         gather.say(ai_ask , language='en-US')
     
@@ -368,7 +368,7 @@ def appointment_fixed():
             ai_ask = "This time slot is not available. Would you like me to schedule appointment which is nearest to your mentioned time slot? Please say Yes or No"
             handler = "/appointment-fixed"
     
-    call_handler.user_ai_summary(call_sid , request.form.get('CallStatus'))
+    user_ai_summary.summary(call_sid , request.form.get('CallStatus')) 
     with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='3', action=handler) as gather:
         gather.say(ai_ask , language='en-US')
 

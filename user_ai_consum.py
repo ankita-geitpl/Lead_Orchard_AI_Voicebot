@@ -1,5 +1,7 @@
 from dependency import *
-from logic import sessions
+from logic import sessions , TwilioCallHandler
+
+call_handler = TwilioCallHandler()
 
 class UserAISummary :
     def __init__(self):
@@ -8,7 +10,7 @@ class UserAISummary :
     def summary(self, call_sid , call_status):
         if call_status == "completed":
             speech_input = """Create notes summarizing a conversation between an AI assistant and a user discussing various aspects of the product, including product inquiries, pricing plans, onboarding processes, scheduling appointments, scheduling tasks, and note-taking. The notes should capture key points discussed in the conversation and present them in bullet points for easy reference."""
-            ai_response = self.run_assistant(call_sid , speech_input)
+            ai_response = call_handler.run_assistant(call_sid , speech_input)
             
             def create_notes(call_sid , ai_response):
                 access_token = sessions[call_sid]['access_token']
