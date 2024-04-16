@@ -59,7 +59,6 @@ class GHLTaskNotesHandler:
         return contact_id
     
     def get_clean_data(self, call_sid, appointment_info, customer_number):
-        import pdb;pdb.set_trace()
         # user_data_clean = {key.lstrip('- '): value if '-' in key else value for key, value in appointment_info.items()}
         if type(appointment_info) is str:
             start_index = appointment_info.find('{')
