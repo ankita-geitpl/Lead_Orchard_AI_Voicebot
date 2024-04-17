@@ -488,7 +488,7 @@ def voice():
     print()
     
     session_id = None
-    user_id , prompt_data , data_pdf_path , location_id , company_id , company_name , access_token = call_handler.get_prompt_file(to_num)
+    user_id , prompt_data , data_pdf_path , location_id , company_id , company_name , access_token = call_handler.get_prompt_file(company_number)
         
     if call_sid not in sessions:
         sessions[call_sid] = {}
@@ -530,6 +530,7 @@ def handle_voice_input():
     customer_number = request.form.get('From')
     session_id = sessions[call_sid]['session']
     contact_id = sessions[call_sid]['contact_id']
+    company_number = request.form.get('ForwardedFrom')
     due_date = None
     
     if session_id is None:
@@ -625,6 +626,7 @@ def contact_information():
     local_company_number = request.form.get('To')
     session_id = sessions[call_sid]['session']
     contact_id = sessions[call_sid]['contact_id']
+    company_number = request.form.get('ForwardedFrom')
     date_extract = None
 
     if session_id is None:
@@ -663,7 +665,7 @@ def contact_information():
         
         handler = "contact-information" 
         
-        file_name = "D:/GEITPL/AvailablyVoiceBot-GEITPL/AI-Voicebot-GEITPL/Lead_Orchard_AI_Voicebot/pdf_data/user_appoint_data/"+customer_number+"+"+local_company_number+".json"
+        file_name = "/home/akash_raut/voicebot/pdf_data/user_appoint_data/"+customer_number+"+"+company_number+".json"
         sessions[call_sid]['file_name'] = file_name  
         
         if "Here is the summary of scheduling details".lower() in ai_response.lower():

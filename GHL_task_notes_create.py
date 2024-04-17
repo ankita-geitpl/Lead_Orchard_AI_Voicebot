@@ -84,7 +84,7 @@ class GHLTaskNotesHandler:
             body = parsed_data.get("Description")
         
         elif type(appointment_info) is dict:
-            import pdb; pdb.set_trace()
+            # import pdb; pdb.set_trace()
             braces_indices = [(m.start(), m.end()) for m in re.finditer(r'\{|\}', appointment_info)]
             start_index, end_index = braces_indices[0][0], braces_indices[-1][1]
             appointment_info = appointment_info[start_index:end_index]
