@@ -24,6 +24,11 @@ app.config['PROMPT_UPLOAD_FOLDER'] = constants.PROMPT_UPLOAD_FOLDER
 app.config['DATA_UPLOAD_FOLDER'] = constants.DATA_UPLOAD_FOLDER
 
 
+# Function to check if the file path is valid
+def is_valid_file(file_path):
+    # Add your validation logic here
+    return True
+
 def get_companies_data():
     try:
         # Connect to the database
@@ -65,6 +70,7 @@ def get_companies_data():
                 # 'api_key': row[17],
                 'company_name': row[8],
                 'is_active': row[19],
+                'is_active_flex': row[20],
             })
 
         # Close cursor and connection
@@ -106,7 +112,8 @@ def get_company_data(id):
                 'directory_file': row[4],
                 'company_name': row[8],
                 'is_active': row[19],
-                'api_key': row[7]
+                'api_key': row[7],
+                'is_active_flex': row[20],
             }
 
         else:
@@ -366,6 +373,10 @@ def update_location(record_id):
         if 'is_active' in request.form:
            is_active = True
         is_active = is_active
+        is_active_flex = False
+        if 'is_active_flex' in request.form:
+           is_active_flex = True
+        is_active_flex = is_active_flex
         phone_number = request.form['phone_number'].replace("-", "")
 
 
@@ -406,7 +417,8 @@ def update_location(record_id):
             "location_id": location_id,
             "is_active": is_active,
             "phone_number": phone_number,
-            'api_key': api_key
+            'api_key': api_key,
+            "is_active_flex": is_active_flex,
         }
 
         # Add "prompt_file" and "directory_file" to data if present
@@ -445,3 +457,45 @@ def delete_location(record_id):
 @app.route('/ai_number_list', methods=['GET'])
 def get_ai_numbers():
     return list_ai_enable_numbers() 
+
+@app.route('/admin/download/<string:record_id>', methods=['GET' , 'POST'])
+def download_files(record_id):
+    # Replace this with your actual database connection logic
+    # Example: connect to the database using location_id to retrieve file paths
+    # You need to replace these with your actual database connection and query logic
+    db_params = constants.db_params
+    connection = psycopg2.connect(**db_params)
+    cursor = connection.cursor()
+
+    # Execute SQL query to fetch data
+    cursor.execute("SELECT prompt_file_path, data_file_path FROM company_data WHERE id = %s", (record_id,))
+    existing_record = cursor.fetchone()
+    if existing_record:
+        prompt_file_path = existing_record[0]
+        directory_file_path = existing_record[1]
+    connection.close()
+    
+    # cursor = db.cursor()
+    # query = "SELECT prompt_file_path, directory_file_path FROM files WHERE location_id = %s"
+    # cursor.execute(query, (location_id,))
+    # result = cursor.fetchone()
+    # cursor.close()
+
+    if not existing_record:
+        flash("No files found for this location_id", "error")
+        return render_template('error.html', error_message="No files found for this location_id"), 404
+
+    # prompt_file_path, directory_file_path = result
+
+    if prompt_file_path:
+        # Send prompt file as attachment
+        flash("Prompt file downloaded successfully", "success")
+        return send_file(prompt_file_path, as_attachment=True)
+    elif directory_file_path:
+        # Send directory file as attachment
+        flash("Data file downloaded successfully", "success")
+        return send_file(directory_file_path, as_attachment=True)
+    else:
+        # Handle case when no files are found
+        flash("No files found for this location_id", "error")
+        return render_template('error.html', error_message="No files found for this location_id"), 404
