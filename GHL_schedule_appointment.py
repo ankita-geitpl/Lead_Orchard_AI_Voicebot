@@ -1,5 +1,5 @@
 from dependency import *
-from logic import *
+from logic import sessions
 
 GHL_APPOINTMENTS_URL = constants.GHL_APPOINTMENTS_URL
 

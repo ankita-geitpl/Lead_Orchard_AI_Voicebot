@@ -1,7 +1,7 @@
 from dependency import *
 import constants
 from GHL_calender_API import *
-# from GHL_task_notes_create import GHLTaskNotesHandler
+
 
 openai_api_key = os.environ["OPENAI_API_KEY"] = constants.APIKEY
 GOHIGHLEVEL_API_URL = constants.GOHIGHLEVEL_API_URL
@@ -17,39 +17,6 @@ class TwilioCallHandler:
 
     def __init__(self):
         pass
-    
-    def check_status(self, call_sid , call_status):
-        if call_status == "completed":
-            speech_input = """Create notes summarizing a conversation between an AI assistant and a user discussing various aspects of the product, including product inquiries, pricing plans, onboarding processes, scheduling appointments, scheduling tasks, and note-taking. The notes should capture key points discussed in the conversation and present them in bullet points for easy reference."""
-            ai_response = self.run_assistant(call_sid , speech_input)
-            
-            def create_notes(call_sid , ai_response):
-                access_token = sessions[call_sid]['access_token']
-                contact_id = sessions[call_sid]['contact_id'] 
-                
-                data_dict_clean = {}
-                data_dict_clean.update({
-                    "body": ai_response
-                })
-                
-                headers = {
-                    'Authorization': f"Bearer {access_token}",
-                    'Version': "2021-07-28",
-                    'Content-Type': "application/json",
-                    'Accept': "application/json"
-                }
-
-                conn = http.client.HTTPSConnection("services.leadconnectorhq.com")
-
-                conn.request("POST", f"/contacts/{contact_id}/notes", json.dumps(data_dict_clean), headers)
-
-                res = conn.getresponse()
-                if res.status == 201 or res.status == 200:
-                    print("Note created successfully!")
-                else:  
-                    print("Note creation failed!")
-            
-            create_notes(call_sid , ai_response)
     
     def get_prompt_file(self , company_number):
         # Replace these values with your PostgreSQL database information

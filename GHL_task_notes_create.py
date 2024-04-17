@@ -1,20 +1,10 @@
 from dependency import *
-from GHL_contact_create import *
+from logic import sessions
 
 class GHLTaskNotesHandler:
     
     def __init__ (self):
         pass
-    
-    # def parse_time(self , time_str):
-    #     try:
-    #         # Try parsing with minutes
-    #         time_object = datetime.strptime(time_str, '%I:%M %p')
-    #     except ValueError:
-    #         # If parsing with minutes fails, try parsing without minutes
-    #         time_object = datetime.strptime(time_str, '%I %p')
-        
-    #     return time_object
     
     def get_due_date_time(self):
         current_datetime = datetime.now()
@@ -82,54 +72,55 @@ class GHLTaskNotesHandler:
             company_name = parsed_data.get("Company Name")
             title = parsed_data.get("Title")
             body = parsed_data.get("Description")
-        
+            
         elif type(appointment_info) is dict:
-            import pdb; pdb.set_trace()
-            braces_indices = [(m.start(), m.end()) for m in re.finditer(r'\{|\}', appointment_info)]
-            start_index, end_index = braces_indices[0][0], braces_indices[-1][1]
-            appointment_info = appointment_info[start_index:end_index]
-            # Iterate over the dictionary and clean values
-            for key, value in appointment_info.items():
-                # Check if value contains double quotes or commas
-                if '"' in value or ',' in value:
-                    # Remove double quotes and commas from the value
-                    appointment_info[key] = value.strip('",')
-                    
-            # appointment_info = json.loads(appointment_info)
-            # import pdb; pdb.set_trace()
+            appointment_info = str(appointment_info)
+            try:
+                import pdb; pdb.set_trace()
+                cleaned_data = appointment_info.replace('\'', '').replace('\\', '')
 
-            # Accessing specific fields from the dictionary
-            title = appointment_info.get('Title', '')
-            body = appointment_info.get('Description', '')
-            first_name = appointment_info.get('First Name', '')
-            last_name = appointment_info.get('Last Name', '')
-            company_name = appointment_info.get('Company Name', '')
-            # Iterate over the dictionary and clean values
-        #     for key, value in appointment_info.items():
-        #         # Check if value contains double quotes or commas
-        #         if '"' in value or ',' in value:
-        #             # Remove double quotes and commas from the value
-        #             appointment_info[key] = value.strip('",')
-        # appointment_info = str(appointment_info)
-        # import pdb; pdb.set_trace()
-        # start_index = appointment_info.find('{')
-        # end_index = appointment_info.rfind('}') + 1
-        # json_string = appointment_info[start_index:end_index]
-        
-        # data_dict = ast.literal_eval(json_string)
+                # Split the string by commas to get key-value pairs
+                pairs = cleaned_data.split(', ')
 
-        # title = data_dict.get('Title', '')
-        # first_name = data_dict.get('First Name', '')
-        # last_name = data_dict.get('Last Name', '')
-        # company_name = data_dict.get("Company Name" , '')
-        # body = data_dict.get("Description" , '')
-        # due_time = data_dict.get("Time" , '')
+                # Initialize variables to store extracted values
+                title = ""
+                first_name = ""
+                last_name = ""
+                company_name = ""
+                body = ""
 
-        # first_name = parsed_data.get("First Name")
-        # last_name = parsed_data.get("Last Name")
-        # title = parsed_data.get("Title")
-        # body = parsed_data.get("Description")
-        # due_time = parsed_data.get("Time")
+                # Extract values from key-value pairs
+                for pair in pairs:
+                    key, value = pair.split(': ')
+                    key = key.strip('"')
+                    value = value.strip('"')
+
+                    if key == "Title":
+                        title = value
+                        title = title.replace('"', '').replace(',', '')
+                    elif key == "First Name":
+                        first_name = value
+                        first_name = first_name.replace('"', '').replace(',', '')
+                    elif key == "Last Name":
+                        last_name = value
+                        last_name = last_name.replace('"', '').replace(',', '')
+                    elif key == "Company Name":
+                        company_name = value
+                        company_name = company_name.replace('"', '').replace(',', '')
+                    elif key == "Description":
+                        body = value
+                        body = body.replace('"', '').replace(',', '')
+            except:
+                parsed_data = json.loads(appointment_info)
+                # Extract values
+                title = parsed_data.get("Title", "")
+                first_name = parsed_data.get("First Name", "")
+                last_name = parsed_data.get("Last Name", "")
+                company_name = parsed_data.get("Company Name", "")
+                body = parsed_data.get("Description", "")
+
+
+
         location_id = sessions[call_sid]['location_id']
         due_date_time = self.get_due_date_time()
         
@@ -147,7 +138,8 @@ class GHLTaskNotesHandler:
         }
         
         return user_contact_data
-
+    
+    
     def get_admin_id(self , call_sid):
         access_token = sessions[call_sid]['access_token']
         location_id = sessions[call_sid]['location_id']
