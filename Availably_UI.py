@@ -70,7 +70,7 @@ def get_companies_data():
                 # 'api_key': row[17],
                 'company_name': row[8],
                 'is_active': row[19],
-                'is_active_flex': row[20],
+                'is_ai_only': row[20],
             })
 
         # Close cursor and connection
@@ -113,7 +113,7 @@ def get_company_data(id):
                 'company_name': row[8],
                 'is_active': row[19],
                 'api_key': row[7],
-                'is_active_flex': row[20],
+                'is_ai_only': row[20],
             }
 
         else:
@@ -373,10 +373,10 @@ def update_location(record_id):
         if 'is_active' in request.form:
            is_active = True
         is_active = is_active
-        is_active_flex = False
-        if 'is_active_flex' in request.form:
-           is_active_flex = True
-        is_active_flex = is_active_flex
+        is_ai_only = False
+        if 'is_ai_only' in request.form:
+           is_ai_only = True
+        is_ai_only = is_ai_only
         phone_number = request.form['phone_number'].replace("-", "")
 
 
@@ -418,7 +418,7 @@ def update_location(record_id):
             "is_active": is_active,
             "phone_number": phone_number,
             'api_key': api_key,
-            "is_active_flex": is_active_flex,
+            "is_ai_only": is_ai_only,
         }
 
         # Add "prompt_file" and "directory_file" to data if present

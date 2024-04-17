@@ -71,7 +71,7 @@
                             <th>Prompt File</th>
                             <th>Knowledge Base</th>
                             <th>Is Active</th>
-                            <th>Is Active for Flex</th>
+                            <th>Is AI Only</th>
                             <th>Options</th>
                         </tr>
                     </thead>
@@ -94,7 +94,7 @@
                                 </a>
                             </td>
                             <td>{{ location.is_active }}</td>
-                            <td>{{ location.is_active_flex }}</td>
+                            <td>{{ location.is_ai_only }}</td>
                             <td class="button_groups">
                                 <a href="/admin/update_location/{{location.id}}" class="btn btn-sm btn-primary mr-2">Edit</a>
                                 <form action="/admin/delete_location/{{ location.id }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this location?')">

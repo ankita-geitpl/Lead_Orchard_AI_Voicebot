@@ -37,7 +37,7 @@ def create_table_with_columns():
         approved_locations TEXT[] NULL,
         plan_id VARCHAR(255) NULL,
         is_active BOOLEAN DEFAULT false,
-        is_active_flex BOOLEAN DEFAULT false,
+        is_ai_only BOOLEAN DEFAULT false,
         CONSTRAINT location_id_uniq UNIQUE (location_id),
         CONSTRAINT location_id_unique UNIQUE (location_id)
     );
@@ -56,7 +56,7 @@ def create_table_with_columns():
         "approved_locations TEXT[] NULL,"
         "plan_id VARCHAR(255) NULL,"
         "is_active BOOLEAN DEFAULT false,"
-        "is_active_flex BOOLEAN DEFAULT false,"
+        "is_ai_only BOOLEAN DEFAULT false,"
         # Add other columns here
     ]
 
