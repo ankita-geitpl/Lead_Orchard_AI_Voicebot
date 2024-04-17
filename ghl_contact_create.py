@@ -148,18 +148,58 @@ class GHLContactHandler:
                     
     def get_subaccount_info(self , call_sid , user_appointment_info , customer_number , date_selected):
         # user_data_clean = {key.lstrip('- '): value if '-' in key else value for key, value in user_appointment_info.items()}
-        start_index = user_appointment_info.find('{')
-        end_index = user_appointment_info.rfind('}') + 1
-        json_string = user_appointment_info[start_index:end_index]
-        
-        parsed_data = json.loads(json_string)
-        
-        first_name = parsed_data.get("First Name")
-        last_name = parsed_data.get("Last Name")
-        company_name = parsed_data.get("Company Name")
-        time_selected = parsed_data.get("Time Selected")
+        if type(user_appointment_info) is str:
+            start_index = user_appointment_info.find('{')
+            end_index = user_appointment_info.rfind('}') + 1
+            json_string = user_appointment_info[start_index:end_index]
+            
+            parsed_data = json.loads(json_string)
+            
+            first_name = parsed_data.get("First Name")
+            last_name = parsed_data.get("Last Name")
+            company_name = parsed_data.get("Company Name")
+            time_selected = parsed_data.get("Time Selected")
+            
+        elif type(user_appointment_info) is dict:
+            user_appointment_info = str(user_appointment_info)
+            try:
+                cleaned_data = user_appointment_info.replace('\'', '').replace('\\', '')
+
+                # Split the string by commas to get key-value pairs
+                pairs = cleaned_data.split(', ')
+
+                # Initialize variables to store extracted values
+                first_name = ""
+                last_name = ""
+                company_name = ""
+                time_selected = ""
+                # Extract values from key-value pairs
+                for pair in pairs:
+                    key, value = pair.split(': ')
+                    key = key.strip('"')
+                    value = value.strip('"')
+
+                    if key == "First Name":
+                        first_name = value
+                        first_name = first_name.replace('"', '').replace(',', '')
+                    elif key == "Last Name":
+                        last_name = value
+                        last_name = last_name.replace('"', '').replace(',', '')
+                    elif key == "Company Name":
+                        company_name = value
+                        company_name = company_name.replace('"', '').replace(',', '')
+                    elif key == "Time Selected":
+                        time_selected = value
+                        time_selected = time_selected.replace('"', '').replace(',', '')
+            except:
+                parsed_data = json.loads(user_appointment_info)
+                # Extract values
+                first_name = parsed_data.get("First Name", "")
+                last_name = parsed_data.get("Last Name", "")
+                company_name = parsed_data.get("Company Name", "")
+                time_selected = parsed_data.get("Time Selected", "")
+                
         location_id = sessions[call_sid]['location_id']
-        
         if date_selected is None:
             date_selected = datetime.datetime.now().strftime("%d-%m-%Y")
         
@@ -233,6 +273,7 @@ class GHLContactHandler:
         conn.request("PUT", f"/contacts/{contact_id}", json.dumps(user_contact_info), headers)
 
         res = conn.getresponse()
+        # import pdb; pdb.set_trace()
         data = res.read()
         print(data.decode("utf-8"))
         
