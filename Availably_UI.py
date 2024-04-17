@@ -260,6 +260,40 @@ def list_ai_enable_numbers():
         return jsonify({'error': str(e)}), 500
     
     
+def list_ai_only_enable_numbers():
+    try:
+        # Connect to the database
+        db_params = constants.db_params
+    
+        # Create a connection to the database
+        conn = psycopg2.connect(**db_params)
+
+        # Create a cursor object
+        cur = conn.cursor()
+
+        # Execute SQL query to fetch data
+        cur.execute("SELECT phone_number FROM company_data WHERE is_ai_only = True",)
+
+        # Fetch all rows
+        rows = cur.fetchall()
+        
+
+        # Convert rows to list of dictionaries
+        company_numbers = []
+        for row in rows:
+            company_numbers.append(row[0])
+        # # Close cursor and connection
+        cur.close()
+        conn.close()
+
+        # Return JSON response
+        return company_numbers
+
+    except Exception as e:
+        print(e)
+        return jsonify({'error': str(e)}), 500
+    
+    
     
 # View to render a web page
 @app.route('/admin')
@@ -453,11 +487,6 @@ def delete_location(record_id):
     flash('Location Removed Successfully', 'success')
     return redirect('/admin')
 
-# Define a route to handle DELETE requests for DELETE location information
-@app.route('/ai_number_list', methods=['GET'])
-def get_ai_numbers():
-    return list_ai_enable_numbers() 
-
 @app.route('/admin/download/<string:record_id>', methods=['GET' , 'POST'])
 def download_files(record_id):
     # Replace this with your actual database connection logic
@@ -499,3 +528,12 @@ def download_files(record_id):
         # Handle case when no files are found
         flash("No files found for this location_id", "error")
         return render_template('error.html', error_message="No files found for this location_id"), 404
+    
+# Define a route to handle DELETE requests for DELETE location information
+@app.route('/ai_number_list', methods=['GET'])
+def get_ai_numbers():
+    return list_ai_enable_numbers() 
+
+@app.route('/ai_only_number_list', methods=['GET'])
+def get_ai_only_numbers():
+    return list_ai_only_enable_numbers()
