@@ -24,11 +24,6 @@ app.config['PROMPT_UPLOAD_FOLDER'] = constants.PROMPT_UPLOAD_FOLDER
 app.config['DATA_UPLOAD_FOLDER'] = constants.DATA_UPLOAD_FOLDER
 
 
-# Function to check if the file path is valid
-def is_valid_file(file_path):
-    # Add your validation logic here
-    return True
-
 def get_companies_data():
     try:
         # Connect to the database
@@ -403,7 +398,7 @@ def update_location(record_id):
         # Get form datasss
         company_name = request.form['company_name']
         location_id = request.form['location_id']
-        api_key =     request.form['api_key']
+        # api_key =     request.form['api_key']
         if 'is_active' in request.form:
            is_active = True
         is_active = is_active
@@ -451,7 +446,7 @@ def update_location(record_id):
             "location_id": location_id,
             "is_active": is_active,
             "phone_number": phone_number,
-            'api_key': api_key,
+            # 'api_key': api_key,
             "is_ai_only": is_ai_only,
         }
 

@@ -157,7 +157,7 @@ class GHLContactHandler:
             
             first_name = parsed_data.get("First Name")
             last_name = parsed_data.get("Last Name")
-            company_name = parsed_data.get("Company Name")
+            company_name = parsed_data.get("Company Name" , "")
             time_selected = parsed_data.get("Time Selected")
             
         elif type(user_appointment_info) is dict:
@@ -175,7 +175,7 @@ class GHLContactHandler:
                 time_selected = ""
                 # Extract values from key-value pairs
                 for pair in pairs:
-                    key, value = pair.split(': ')
+                    key, value = pair.split(': ' , 1)
                     key = key.strip('"')
                     value = value.strip('"')
 
