@@ -8,6 +8,7 @@ from GHL_task_notes_create import *
 from GHL_calender_API import *
 from user_ai_consum import *
 from Availably_UI import *
+from Authtoken import *
 
 
 call_handler = TwilioCallHandler() 
@@ -16,6 +17,37 @@ task_create = GHLTaskNotesHandler()
 appointment_create = GHLAppointmentHandler()
 slots_create = GHLSlotsHandler()
 user_ai_summary = UserAISummary()
+auth_token = AuthTokenGenerator()
+
+
+# def check_call_status_async(call_sid, initial_call_status , val , note_id = None):
+#     # Example: Check call status every 5 seconds
+#     if val == 1:
+#         while True:
+#             # Check call status asynchronously
+#             initial_call_status="completed"
+#             if initial_call_status == "completed":
+#                 user_ai_summary.create_summary(call_sid , initial_call_status)
+#                 # user_ai_summary.update_summary(call_sid, initial_call_status , note_id)
+#                 sessions[call_sid]['notes_val'] = 0
+#                 # Perform cleanup or logging tasks
+#                 break
+#             # Update call status asynchronously (if possible)
+#             time.sleep(5)  # Wait for 5 seconds before checking again
+            
+#     elif val == 0:   
+#         while True:
+#             # Check call status asynchronously
+#             initial_call_status="completed"
+#             if initial_call_status == "completed":
+#                 # user_ai_summary.create_summary(call_sid , initial_call_status)
+#                 user_ai_summary.update_summary(call_sid, initial_call_status , note_id)
+#                 sessions[call_sid]['notes_val'] = 0
+#                 # Perform cleanup or logging tasks
+#                 break
+#             # Update call status asynchronously (if possible)
+#             time.sleep(5)  # Wait for 5 seconds before checking again
+
 
 @app.route('/voice', methods=['GET' , 'POST'])
 def voice():
@@ -29,11 +61,11 @@ def voice():
     print("=============================")
     chat_history = [] 
     date_extract = None
-    start_session_time = datetime.now()
+    start_session_time = datetime.datetime.now()
     
     if start_session_time > end_session_time:
         sessions.clear()
-        current_date = datetime.now().date()
+        current_date = datetime.datetime.now().date()
         end_of_day = datetime.combine(current_date + timedelta(days=1), datetime.min.time()) - timedelta(seconds=1)
         end_session_time = end_of_day.replace(hour=23, minute=59, second=59)
     
@@ -46,6 +78,9 @@ def voice():
     print("Forwarded From : ",company_number)
     print("===========================================================")
     print()
+    
+    starttime_token = datetime.datetime.now()
+    auth_token.generate_auth_token(starttime_token , to_num)
     
     session_id = None
     user_id , prompt_data , data_pdf_path , location_id , company_id , company_name , access_token = call_handler.get_prompt_file(to_num)
@@ -66,35 +101,139 @@ def voice():
         sessions[call_sid]['chat_history'] = chat_history  
         sessions[call_sid]['company_id'] = company_id
         sessions[call_sid]['company_name'] = company_name 
+        sessions[call_sid]['notes_val'] = 1 
+        
+        
         contact_check_id = task_create.contact_id_check(call_sid , customer_number)
         if contact_check_id is not None:
             sessions[call_sid]['contact_id'] = contact_check_id  
         else:
             sessions[call_sid]['contact_id'] = None  
         
-        with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='5', action='/handle-voice') as gather:
+        with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='3', timeout = '30' , action='/handle-voice') as gather:
             gather.say(call_handler.run_assistant(call_sid, ques='Initial Greeting'),language='en-US')
     
     except Exception as e:
         print("Error" , e)
         response.say("There was an error processing your request . Please try again later.",language='en-US')
 
+    # # Start a separate thread to check call status asynchronously
+    # call_status = request.form.get('CallStatus')
+    # call_status_thread = threading.Thread(target=check_call_status_async, args=(call_sid , call_status , sessions[call_sid]['notes_val']))
+    # call_status_thread.start()
+    
     return str(response)
 
-@app.route('/handle-voice', methods=['GET' , 'POST'])
+# @app.route('/handle-voice', methods=['GET' , 'POST'])
+# def handle_voice_input():
+#     response = VoiceResponse()
+#     speech_result = request.form.get('SpeechResult')
+#     confidence_score = float(request.form.get('Confidence', 0.0))
+#     call_sid = request.form.get('CallSid')
+#     customer_number = request.form.get('From')
+#     session_id = sessions[call_sid]['session']
+#     contact_id = sessions[call_sid]['contact_id']
+#     due_date = None
+    
+#     if session_id is None:
+#         session_id = str(random.randint(1000, 999999))
+#         sessions[call_sid]['session'] = session_id
+
+#     date = call_handler.extract_date(speech_result)
+
+#     if date is not None:
+#         sessions[call_sid]['due_date'] = date
+#         due_date = sessions[call_sid]['due_date']
+        
+#     print()   
+#     print("===========================================================")
+#     print("User Response:", speech_result)
+#     print("===========================================================")
+#     print()
+
+#     print()
+#     print("===========================================================")
+#     print("Due Date:", due_date)
+#     print("===========================================================")
+#     print()
+
+#     if confidence_score > 0.60 and speech_result:
+        
+#         ai_response = call_handler.run_assistant(call_sid, speech_result)
+#         if sessions[call_sid]['notes_val'] == 1:
+#             note_id = user_ai_summary.create_summary(call_sid , request.form.get('CallStatus'))
+#             sessions[call_sid]['notes_val'] = 0
+        
+#         print()
+#         print("===========================================================")
+#         print("AI Response:", ai_response)
+#         print("===========================================================")
+#         print()
+        
+#         if "I can help you with that".lower() in ai_response.lower():
+#             handler = "contact-information"
+#             user_ai_summary.summary(call_sid , request.form.get('CallStatus')) 
+#             with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '15' , action=handler) as gather:
+#                 gather.say(ai_response, language='en-US')
+        
+#         if "Here is the summary of your task".lower() in ai_response.lower():
+#             lines = ai_response.split('\n')
+#             task_info = {}
+            
+#             for line in lines:
+#                 if ':' not in line:
+#                     continue
+#                 key, value = line.split(':', 1)
+#                 task_info[key.strip()] = value.strip()
+            
+#             user_contact_info = task_create.get_clean_data(call_sid , task_info , customer_number)
+            
+#             if contact_id is not None:
+#                 contact_handler.update_contact(call_sid , sessions[call_sid]["contact_id"]  , user_contact_info)
+#                 ai_response = task_create.create_task(call_sid , user_contact_info)
+#                 handler = "/handle-voice"
+#                 user_ai_summary.summary(call_sid , request.form.get('CallStatus')) 
+#                 with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '15' , action=handler) as gather:
+#                     gather.say(ai_response, language='en-US')
+            
+#             else:
+#                 contact_handler.contact_id_generate(customer_number , call_sid , user_contact_info)
+#                 contact_id = task_create.contact_id_check(call_sid , customer_number)
+#                 ai_response = task_create.create_task(call_sid , user_contact_info)
+#                 handler = "/handle-voice"
+#                 user_ai_summary.summary(call_sid , request.form.get('CallStatus')) 
+#                 with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '15' , action=handler) as gather:
+#                     gather.say(ai_response, language='en-US')
+        
+#         else:
+#             handler = "/handle-voice"
+#             # user_ai_summary.summary(call_sid , request.form.get('CallStatus')) 
+#             with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '15' , action=handler) as gather:
+#                 gather.say(ai_response, language='en-US')
+             
+#     else:
+#         ai_response = "No voice input received. Please try again."
+#         handler = "/handle-voice"
+#         user_ai_summary.summary(call_sid , request.form.get('CallStatus')) 
+#         with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '15' , action=handler) as gather:
+#             gather.say(ai_response, language='en-US')
+            
+#     return str(response)
+
+@app.route('/handle-voice', methods=['GET', 'POST'])
 def handle_voice_input():
     response = VoiceResponse()
     speech_result = request.form.get('SpeechResult')
     confidence_score = float(request.form.get('Confidence', 0.0))
     call_sid = request.form.get('CallSid')
     customer_number = request.form.get('From')
-    session_id = sessions[call_sid]['session']
-    contact_id = sessions[call_sid]['contact_id']
+    session_id = sessions.get(call_sid, {}).get('session')
+    contact_id = sessions.get(call_sid, {}).get('contact_id')
     due_date = None
     
     if session_id is None:
         session_id = str(random.randint(1000, 999999))
-        sessions[call_sid]['session'] = session_id
+        sessions[call_sid] = {'session': session_id}
 
     date = call_handler.extract_date(speech_result)
 
@@ -115,39 +254,29 @@ def handle_voice_input():
     print()
 
     if confidence_score > 0.60 and speech_result:
-        
         ai_response = call_handler.run_assistant(call_sid, speech_result)
-        
+
         print()
         print("===========================================================")
         print("AI Response:", ai_response)
         print("===========================================================")
         print()
-        
+
         if "I can help you with that".lower() in ai_response.lower():
             handler = "contact-information"
-            user_ai_summary.summary(call_sid , request.form.get('CallStatus')) 
-            with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='3', action=handler) as gather:
+            user_ai_summary.create_summary(call_sid , request.form.get('CallStatus'))
+            with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='3', timeout = '30' , action=handler) as gather:
                 gather.say(ai_response, language='en-US')
         
-        if "summary of your task".lower() in ai_response.lower():
-            lines = ai_response.split('\n')
-            task_info = {}
-            
-            for line in lines:
-                if ':' not in line:
-                    continue
-                key, value = line.split(':', 1)
-                task_info[key.strip()] = value.strip()
-            
-            user_contact_info = task_create.get_clean_data(call_sid , task_info , customer_number)
+        if "Here is the summary".lower() in ai_response.lower() or "Here's the summary".lower() in ai_response.lower():
+            user_contact_info = task_create.get_clean_data(call_sid , ai_response , customer_number)
             
             if contact_id is not None:
                 contact_handler.update_contact(call_sid , sessions[call_sid]["contact_id"]  , user_contact_info)
                 ai_response = task_create.create_task(call_sid , user_contact_info)
-                handler = "/handle-voice"
-                user_ai_summary.summary(call_sid , request.form.get('CallStatus')) 
-                with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='3', action=handler) as gather:
+                handler = "/handle-voice" 
+                user_ai_summary.create_summary(call_sid , request.form.get('CallStatus'))
+                with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='3', timeout = '30' , action=handler) as gather:
                     gather.say(ai_response, language='en-US')
             
             else:
@@ -155,24 +284,30 @@ def handle_voice_input():
                 contact_id = task_create.contact_id_check(call_sid , customer_number)
                 ai_response = task_create.create_task(call_sid , user_contact_info)
                 handler = "/handle-voice"
-                user_ai_summary.summary(call_sid , request.form.get('CallStatus')) 
-                with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='3', action=handler) as gather:
+                user_ai_summary.create_summary(call_sid , request.form.get('CallStatus'))
+                with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='3', timeout = '30' , action=handler) as gather:
                     gather.say(ai_response, language='en-US')
         
         else:
             handler = "/handle-voice"
-            user_ai_summary.summary(call_sid , request.form.get('CallStatus')) 
-            with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='3', action=handler) as gather:
+            user_ai_summary.create_summary(call_sid , request.form.get('CallStatus'))
+            with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='3', timeout = '30' , action=handler) as gather:
                 gather.say(ai_response, language='en-US')
              
     else:
         ai_response = "No voice input received. Please try again."
         handler = "/handle-voice"
-        user_ai_summary.summary(call_sid , request.form.get('CallStatus')) 
-        with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='3', action=handler) as gather:
+        user_ai_summary.create_summary(call_sid , request.form.get('CallStatus'))
+        with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='3', timeout = '30' , action=handler) as gather:
             gather.say(ai_response, language='en-US')
-            
+    
+    # # Start a separate thread to check call status asynchronously
+    # call_status = request.form.get('CallStatus')
+    # call_status_thread = threading.Thread(target=check_call_status_async, args=(call_sid , call_status , sessions[call_sid]['notes_val'] , sessions[call_sid]['notes_id']))
+    # call_status_thread.start()
+    user_ai_summary.create_summary(call_sid , request.form.get('CallStatus'))
     return str(response)
+
 
 @app.route('/contact-information', methods=['GET', 'POST'])
 def contact_information():
@@ -239,11 +374,11 @@ def contact_information():
                 json.dump(user_contact_info, json_file, indent=4)
             
             contact_handler.contact_id_generate(customer_number , call_sid , user_contact_info)
-            ai_response = "Please wait , while I am fixing the appointment for you , Is it okay for you?"
+            ai_response = "Thanks for your patience! I'm in the process of setting up your appointment. Is it okay for you?"
             handler = "/appointment-confirmation"
             
         
-        elif "summary of your task".lower() in ai_response.lower():
+        elif "Here is the summary".lower() in ai_response.lower() or "Here's the summary".lower() in ai_response.lower():
             user_contact_info = task_create.get_clean_data(call_sid , ai_response , customer_number)
             
             if contact_id is not None:
@@ -257,17 +392,22 @@ def contact_information():
                 ai_response = task_create.create_task(call_sid , user_contact_info)
                 handler = "/handle-voice"
         
-        user_ai_summary.summary(call_sid , request.form.get('CallStatus')) 
-        with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='3', action=handler) as gather:
+        user_ai_summary.create_summary(call_sid , request.form.get('CallStatus'))
+        with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='3', timeout = '30' , action=handler) as gather:
             gather.say(ai_response, language='en-US')
         
     else:
         ai_response = "No voice input received. Please try again."
         handler = "/contact-information"
-        user_ai_summary.summary(call_sid , request.form.get('CallStatus')) 
-        with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='3', action=handler) as gather:
+        user_ai_summary.create_summary(call_sid , request.form.get('CallStatus'))
+        with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='3', timeout = '30' , action=handler) as gather:
             gather.say(ai_response, language='en-US')
-            
+    
+    # # Start a separate thread to check call status asynchronously
+    # call_status = request.form.get('CallStatus')
+    # call_status_thread = threading.Thread(target=check_call_status_async, args=(call_sid , call_status , sessions[call_sid]['notes_val'] , sessions[call_sid]['notes_id']))
+    # call_status_thread.start()
+    user_ai_summary.create_summary(call_sid , request.form.get('CallStatus'))
     return str(response)
 
 @app.route('/appointment-confirmation', methods=['GET' , 'POST'])
@@ -290,7 +430,7 @@ def appointment_confirmation():
     sessions[call_sid]['slot'] = slot
 
     if "Time SLot is Available".lower() in text.lower():
-        ai_ask = "Do you want to fix the appointment for you? , Please say Yes or No"
+        ai_ask = "Would you like me to schedule the appointment for you? Just let me know with a simple 'Yes' or 'No'."
         
         
     elif "Nearest Time SLot is Available".lower() in text.lower():
@@ -298,14 +438,20 @@ def appointment_confirmation():
         
         
     elif "Time SLot is not Available".lower() in text.lower():
-        ai_ask = "Time Slot is not available for this date. Please Provide me a new date for appointment."
+        ai_ask = "It seems that the time slot for this date is not available. Could you please suggest an alternative date for the appointment?"
         
     handler = "/appointment-fixed"
     
-    user_ai_summary.summary(call_sid , request.form.get('CallStatus'))
-    with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='3', action=handler) as gather:
+    # user_ai_summary.summary(call_sid , request.form.get('CallStatus'))
+    user_ai_summary.create_summary(call_sid , request.form.get('CallStatus'))
+    with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='3', timeout = '30' , action=handler) as gather:
         gather.say(ai_ask , language='en-US')
     
+    # # Start a separate thread to check call status asynchronously
+    # call_status = request.form.get('CallStatus')
+    # call_status_thread = threading.Thread(target=check_call_status_async, args=(call_sid , call_status , sessions[call_sid]['notes_val'] , sessions[call_sid]['notes_id']))
+    # call_status_thread.start()
+    user_ai_summary.create_summary(call_sid , request.form.get('CallStatus'))
     return str(response)
 
 @app.route('/appointment-fixed', methods=['POST'])
@@ -330,26 +476,30 @@ def appointment_fixed():
     print("===========================================================")
     print()
     
-    if any(word in speech_result.lower() for word in ['yes', 'yeah', 'sure', 'okay', 'ok']): 
-            if slot.lower() == "No time slot is available".lower():
-                slot = get_free_slots[0]
+    if any(word in speech_result.lower() for word in ['yes', 'yeah', 'sure', 'okay', 'ok' , 'yup']): 
+        if slot.lower() == "No time slot is available".lower():
+            slot = get_free_slots[0]
 
-            status_code = appointment_create.create_appointment(call_sid , calendars_id  , slot)
+        status_code = appointment_create.create_appointment(call_sid , calendars_id  , slot)
 
-            if status_code == 201 or status_code == 200:
-                print("Contact created successfully")
-                ai_ask = "Your appointment has been fixed successfully. Thank you for using our service. , if you want to know more about our service feel free to ask"
-                handler = "/handle-voice"
-            else:
-                print("Failed to create or update contact")
-                ai_ask = "Sorry, I was unable to fix the appointment. Please try again later."
-                handler = "/handle-voice"
+        if status_code == 201 or status_code == 200:
+            print("Contact created successfully")
+            ai_ask = "Your appointment has been fixed successfully. Thank you for using our service. , if you want to know more about our service feel free to ask"
+            handler = "/handle-voice"
+        else:
+            print("Failed to create or update contact")
+            ai_ask = "Sorry, I was unable to fix the appointment. Please try again later."
+            handler = "/handle-voice"
+    
     elif any(word in speech_result.lower() for word in ['no', 'nope', 'not', 'cancel']):
         ai_ask = "Thank you for using our service. If you want to know more about our service feel free to ask"
         handler = "/handle-voice"
         
     else:
         ghl_calender = GHLCalendarAPI()
+        if date_extract == None:
+            #------------------------------------
+            date_extract = '25-04-2024'
         start_date, end_date, time_24h_format , date_selected = ghl_calender.get_date_time(sessions[call_sid]['file_name'] , date_extract)
         slot , get_free_slots , text = ghl_calender.fetch_available_slots(calendars_id , sessions[call_sid]['access_token'] , start_date, end_date, time_24h_format, date_selected)
         sessions[call_sid]['get_free_slots'] = get_free_slots
@@ -368,10 +518,15 @@ def appointment_fixed():
             ai_ask = "This time slot is not available. Would you like me to schedule appointment which is nearest to your mentioned time slot? Please say Yes or No"
             handler = "/appointment-fixed"
     
-    user_ai_summary.summary(call_sid , request.form.get('CallStatus')) 
-    with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='3', action=handler) as gather:
+    user_ai_summary.create_summary(call_sid , request.form.get('CallStatus'))
+    with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='3', timeout = '30' , action=handler) as gather:
         gather.say(ai_ask , language='en-US')
 
+    # # Start a separate thread to check call status asynchronously
+    # call_status = request.form.get('CallStatus')
+    # call_status_thread = threading.Thread(target=check_call_status_async, args=(call_sid , call_status , sessions[call_sid]['notes_val'] , sessions[call_sid]['notes_id']))
+    # call_status_thread.start()
+    user_ai_summary.create_summary(call_sid , request.form.get('CallStatus'))
     return str(response)
 
 if __name__ == "__main__":

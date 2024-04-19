@@ -60,6 +60,7 @@ class GHLTaskNotesHandler:
     
     def get_clean_data(self, call_sid, appointment_info, customer_number):
         # user_data_clean = {key.lstrip('- '): value if '-' in key else value for key, value in appointment_info.items()}
+        # import pdb; pdb.set_trace()
         if type(appointment_info) is str:
             start_index = appointment_info.find('{')
             end_index = appointment_info.rfind('}') + 1
@@ -69,14 +70,14 @@ class GHLTaskNotesHandler:
 
             first_name = parsed_data.get("First Name")
             last_name = parsed_data.get("Last Name")
-            company_name = parsed_data.get("Company Name")
+            company_name = parsed_data.get("Company Name" , "")
             title = parsed_data.get("Title")
             body = parsed_data.get("Description")
             
         elif type(appointment_info) is dict:
+            # import pdb; pdb.set_trace()
             appointment_info = str(appointment_info)
             try:
-                import pdb; pdb.set_trace()
                 cleaned_data = appointment_info.replace('\'', '').replace('\\', '')
 
                 # Split the string by commas to get key-value pairs
@@ -91,7 +92,7 @@ class GHLTaskNotesHandler:
 
                 # Extract values from key-value pairs
                 for pair in pairs:
-                    key, value = pair.split(': ')
+                    key, value = pair.split(': ',1)
                     key = key.strip('"')
                     value = value.strip('"')
 

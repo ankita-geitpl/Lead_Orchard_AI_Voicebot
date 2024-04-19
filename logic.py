@@ -90,7 +90,7 @@ class TwilioCallHandler:
 
     def extract_date(self , text):
         time_cleaned = text.replace('.', '')
-        time_cleaned = time_cleaned.lower().replace('I am', '')
+        time_cleaned = time_cleaned.lower().replace('i am', '')
         if "am".lower() not in time_cleaned.lower() and "pm".lower() not in time_cleaned.lower():
             try:
                 # Check if the text contains references to "today" or "tomorrow"
