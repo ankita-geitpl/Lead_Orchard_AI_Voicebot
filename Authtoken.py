@@ -26,9 +26,6 @@ class AuthTokenGenerator:
             # Fetch the PDF file from the database based on the phone number
             cursor.execute("SELECT token_refresh_date FROM company_data WHERE phone_number = %s", (company_number,))
             endtime_token = cursor.fetchone()[0]
-            print("==================================================")
-            print(endtime_token)
-            print("==================================================")
             # import pdb; pdb.set_trace()
             if endtime_token is None or starttime_token >= endtime_token:
                 # import pdb; pdb.set_trace()
