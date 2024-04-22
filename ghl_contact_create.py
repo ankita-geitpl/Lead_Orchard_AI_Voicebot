@@ -291,3 +291,20 @@ class GHLContactHandler:
             print("Error updating contact!")
             print("===========================================================")
             print()
+
+
+    def user_data_changer(self , file_name , time , date):
+        with open(file_name, "r") as json_file:    
+            user_data_dict = json.load(json_file)
+
+        print()   
+        print("===========================================================")
+        print("Data Dict:", user_data_dict)
+        print("===========================================================")
+        print()
+        
+        user_data_dict["dateSelected"] = str(date)
+        user_data_dict["timeSelected"] = str(time)
+
+        with open(file_name, 'w') as json_file:
+            json.dump(user_data_dict, json_file, indent=4)

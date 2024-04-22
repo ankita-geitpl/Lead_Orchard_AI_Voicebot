@@ -110,8 +110,61 @@ class TwilioCallHandler:
             
             except ValueError:
                 # If parsing fails, return None
-                return datetime.now().strftime("%d-%m-%Y")
-           
+                return None
+
+    def preprocess_sentence(self , sentence):
+        # Replace 'today' with today's date
+        today_date = datetime.now().strftime('%d-%m-%Y')
+        sentence = re.sub(r'\b(?:today)\b', today_date, sentence, flags=re.IGNORECASE)
+    
+        # Replace 'tomorrow' with tomorrow's date
+        tomorrow_date = (datetime.now() + timedelta(days=1)).strftime('%d-%m-%Y')
+        sentence = re.sub(r'\b(?:tomorrow)\b', tomorrow_date, sentence, flags=re.IGNORECASE)
+    
+        return sentence
+
+    def extract_date_and_time(self , sentence):
+        try:
+            # Preprocess the sentence
+            sentence = self.preprocess_sentence(sentence)
+        
+            parsed_date = parser.parse(sentence, fuzzy_with_tokens=True)
+            date = parsed_date[0].strftime("%d-%m-%Y")  # Format date as dd-mm-yyyy
+        
+            # Regular expressions to find time in the sentence
+            time_patterns = [
+                r'\b\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)?\b',  # HH:MM AM/PM
+                r'\b\d{1,2}\s*(?:AM|PM|am|pm)\b',          # H AM/PM
+                r'\b\d{1,2}:\d{2}\b',                       # HH:MM
+                r'\b\d{1,2}\b',                             # H
+            ]
+        
+            time = None
+            for pattern in time_patterns:
+                time_match = re.search(pattern, sentence)
+                if time_match:
+                    time = time_match.group()
+                    break
+        
+            return date
+        except Exception as e:
+            print("Error:", e)
+            return None      
+    
+    def extract_time(self , text):
+        # Regular expression to match time in the format hh:mm AM/PM
+        if "." in text:
+            text = text.lower().replace("." , "")
+        time_pattern = r'\b\d{1,2}\s*(?::\s*\d{2})?\s*(?:AM|PM|am|pm|)?\b'
+
+        # Search for the time pattern in the text
+        time_match = re.search(time_pattern, text)
+
+        if time_match:
+            return time_match.group(0)
+        else:
+            return None
+
     def get_documents_from_web(self , data_pdf_path):
         file_loader = PyMuPDFLoader(data_pdf_path)
         documents = file_loader.load()
