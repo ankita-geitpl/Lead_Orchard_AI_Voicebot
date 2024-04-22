@@ -110,7 +110,7 @@ class TwilioCallHandler:
             
             except ValueError:
                 # If parsing fails, return None
-                return None
+                return datetime.now().strftime("%d-%m-%Y")
            
     def get_documents_from_web(self , data_pdf_path):
         file_loader = PyMuPDFLoader(data_pdf_path)

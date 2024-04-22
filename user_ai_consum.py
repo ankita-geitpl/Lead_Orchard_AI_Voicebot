@@ -33,25 +33,12 @@ class UserAISummary :
                 conn.request("POST", f"/contacts/{contact_id}/notes", json.dumps(data_dict_clean), headers)
 
                 res = conn.getresponse()
-                # data = res.read()
-                # # Decode the byte string into a regular string
-                # json_string = data.decode('utf-8')
-
-                # # Parse the JSON string into a Python dictionary
-                # data = json.loads(json_string)
-
-                # # Fetching value of "id" from "note"
-                # # note_id = data["note"]["id"]
                 if res.status == 201 or res.status == 200:
                     print("Note created successfully!")
                 else:  
                     print("Note creation failed!")
-                    
-                # return note_id
-            
+
             create_notes(call_sid , ai_response)
-            # # import pdb; pdb.set_trace()
-            # return note_id
             
     def update_summary(self, call_sid , call_status , note_id):
         if call_status == "completed":
