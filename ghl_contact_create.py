@@ -259,35 +259,42 @@ class GHLContactHandler:
             
     def update_contact(self , call_sid , contact_id , user_contact_info):
         access_token = sessions[call_sid]['access_token']
-        
         conn = http.client.HTTPSConnection("services.leadconnectorhq.com")
-
         keys_to_remove = ['title', 'body', 'dueDate', 'completed', 'dateSelected', 'timeSelected' , 'locationId']
         user_contact_info = {key: value for key, value in user_contact_info.items() if key not in keys_to_remove}
-        
         headers = {'Authorization': f"Bearer {access_token}",
                    'Version': "2021-07-28",
                    'Content-Type': "application/json",
                    'Accept': "application/json"}
-
         conn.request("PUT", f"/contacts/{contact_id}", json.dumps(user_contact_info), headers)
-
         res = conn.getresponse()
-        # import pdb; pdb.set_trace()
+
         data = res.read()
         print(data.decode("utf-8"))
-        
-        
         if res.status == 201 or res.status == 200:
-            print()   
+            print()
             print("===========================================================")
             print("Contact updated successfully!")
             print("===========================================================")
             print()
-            
         else:
             print()
             print("===========================================================")
             print("Error updating contact!")
             print("===========================================================")
             print()
+    
+    def user_data_changer(self , file_name , time , date):
+        with open(file_name, "r") as json_file:
+            user_data_dict = json.load(json_file)
+        print()
+        print("===========================================================")
+        print("Data Dict:", user_data_dict)
+        print("===========================================================")
+        print()
+        
+        user_data_dict["dateSelected"] = str(date)
+        user_data_dict["timeSelected"] = str(time)
+        
+        with open(file_name, 'w') as json_file:
+            json.dump(user_data_dict, json_file, indent=4)
