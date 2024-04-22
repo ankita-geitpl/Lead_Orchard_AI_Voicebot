@@ -155,7 +155,7 @@ def update_company_data(id, form_json):
             company_data =  get_company_data(id)
             flash('Phone number already with another account!', 'success')
             return False
-
+            
         # Initialize the SET clause and parameter list
         set_clause = ''
         params = []
