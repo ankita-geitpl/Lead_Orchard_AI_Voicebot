@@ -155,6 +155,11 @@ def handle_voice_input():
                 handler = "/handle-voice"
                 with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '30' , action_on_empty_result = True , action=handler) as gather:
                     gather.say(ai_response, language='en-US')
+
+        if "canceling your appointment".lower() in ai_response.lower():
+            handler = "/cancel-appointment"
+            with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '30' , action_on_empty_result = True , action=handler) as gather:
+                gather.say(ai_response, language='en-US')
         
         else:
             handler = "/handle-voice"
@@ -259,6 +264,9 @@ def contact_information():
                 ai_response = task_create.create_task(call_sid , user_contact_info)
                 handler = "/handle-voice"
         
+        elif "canceling your appointment".lower() in ai_response.lower():
+            handler = "/cancel-appointment"
+
         with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '30' , action_on_empty_result = True , action=handler) as gather:
             gather.say(ai_response, language='en-US')
         
@@ -415,6 +423,18 @@ def appointment_fixed():
     with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '30' , action_on_empty_result = True , action=handler) as gather:
         gather.say(ai_ask , language='en-US')
 
+    user_ai_summary.create_summary(request.form.get('CallSid') , request.form.get('CallStatus'))
+    return str(response)
+
+@app.route('/cancel-appointment', methods=['GET' , 'POST'])
+def cancel_appointment():
+    user_ai_summary.create_summary(request.form.get('CallSid') , request.form.get('CallStatus'))
+    response = VoiceResponse()
+    call_sid = request.form.get('CallSid')
+    ai_response = appointment_create.delete_appointment(call_sid)
+    handler = "/handle-voice"
+    with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '30' , action_on_empty_result = True , action=handler) as gather:
+        gather.say(ai_response , language='en-US')
     user_ai_summary.create_summary(request.form.get('CallSid') , request.form.get('CallStatus'))
     return str(response)
 
