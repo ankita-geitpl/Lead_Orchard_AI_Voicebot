@@ -106,3 +106,30 @@ class GHLAppointmentHandler:
                 return res.status
             else:
                 return None
+
+def delete_appointment(self , call_sid):
+        access_token = sessions[call_sid]['access_token']
+        event_id = str(self.get_event_id(call_sid))
+        conn = http.client.HTTPSConnection("services.leadconnectorhq.com")
+        headers = {
+                        'Authorization': f"Bearer {access_token}",
+                        'Version': "2021-07-28",
+                        'Content-Type': "application/json",
+                        'Accept': "application/json"
+                    }
+        import pdb; pdb.set_trace()
+        # conn.request("DELETE", f"/calendars/events/{event_id}", headers)
+        conn.request("DELETE", f"/calendars/events/{event_id}", headers=headers)
+        res = conn.getresponse()
+        if res.status == 201 or res.status == 200:
+            return "Your Appointment is Cancelled Successfully . If you have any queries , feel free to ask"
+        else:
+            return "Some error occured while cancelling the appointment . Try again after some time"
+
+
+
+
+
+
+
+
