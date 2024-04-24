@@ -109,7 +109,11 @@ class GHLAppointmentHandler:
 
     def delete_appointment(self , call_sid):
             access_token = sessions[call_sid]['access_token']
-            event_id = str(self.get_event_id(call_sid))
+            event_id = self.get_event_id(call_sid)
+            print("===================================================")
+            print("Event id = " , event_id)
+            print("===================================================")
+
             
             if event_id is None:
                 return "There is no appointment scheduled for you . If you have any queries , feel free to ask"
@@ -121,10 +125,14 @@ class GHLAppointmentHandler:
                             'Content-Type': "application/json",
                             'Accept': "application/json"
                         }
-                        
+
             # conn.request("DELETE", f"/calendars/events/{event_id}", headers)
             conn.request("DELETE", f"/calendars/events/{event_id}", headers=headers)
             res = conn.getresponse()
+            data = res.read()
+            print("===================================================")
+            print(data.decode("utf-8"))
+            print("===================================================")
             if res.status == 201 or res.status == 200:
                 return "Your Appointment is Cancelled Successfully . If you have any queries , feel free to ask"
             else:
