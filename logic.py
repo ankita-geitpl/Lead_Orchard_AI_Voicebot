@@ -112,6 +112,30 @@ class TwilioCallHandler:
                 # If parsing fails, return None
                 return None
 
+    def extract_date_2(self , text):
+        time_cleaned = text.replace('.', '')
+        time_cleaned = time_cleaned.lower().replace('i am', '')
+        if "am".lower() not in time_cleaned.lower() and "pm".lower() not in time_cleaned.lower():
+            try:
+                # Check if the text contains references to "today" or "tomorrow"
+                today = datetime.now().date()
+                if 'today' in text.lower():
+                    return today.strftime("%d-%m-%Y")
+                
+                elif 'tomorrow' in text.lower():
+                    tomorrow = today + timedelta(days=1)
+                    return tomorrow.strftime("%d-%m-%Y")
+                
+                # Attempt to parse the date using dateutil.parser
+                if "clock".lower() not in time_cleaned.lower():
+                    parsed_date = parser.parse(text, fuzzy=True)
+                    formatted_date = parsed_date.strftime("%Y-%m-%d")
+                    return formatted_date
+            
+            except ValueError:
+                # If parsing fails, return None
+                return None
+
     def preprocess_sentence(self , sentence):
         # Replace 'today' with today's date
         today_date = datetime.now().strftime('%d-%m-%Y')
@@ -245,12 +269,13 @@ class GHLSlotsHandler:
         access_token = sessions[call_sid]['access_token']
         user_data = sessions[call_sid]['file_name']
         location_id = sessions[call_sid]['location_id']
+        timezone = sessions[call_sid]['timezone']
         
         calendars_id = ghl_calender.get_calender(location_id , access_token)
         
         start_date, end_date, time_24h_format , date_selected = ghl_calender.get_date_time(user_data)
         
-        slot , get_free_slots , text = ghl_calender.fetch_available_slots(calendars_id , access_token , start_date, end_date, time_24h_format, date_selected)
+        slot , get_free_slots , text = ghl_calender.fetch_available_slots(calendars_id , access_token , start_date, end_date, time_24h_format, date_selected , timezone)
         
         print()   
         print("===========================================================")
