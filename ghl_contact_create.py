@@ -201,7 +201,7 @@ class GHLContactHandler:
                 
         location_id = sessions[call_sid]['location_id']
         if date_selected is None:
-            date_selected = datetime.datetime.now().strftime("%d-%m-%Y")
+            date_selected = datetime.now().strftime("%d-%m-%Y")
         
         contact_data = {
             "phone": customer_number,
