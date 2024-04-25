@@ -71,8 +71,6 @@ class GHLAppointmentHandler:
         contact_id = sessions[call_sid]['contact_id']
         access_token = sessions[call_sid]['access_token']
         
-        event_id = self.get_event_id(call_sid)
-        
         with open(user_data_file, "r") as json_file:    
             user_data = json.load(json_file)
         user_data_clean = {key.lstrip('- '): value if '-' in key else value for key, value in user_data.items()}
@@ -88,51 +86,31 @@ class GHLAppointmentHandler:
             "title": "Scheduling Appointment with AI Voicebot",
         })
         
-        if event_id is not None:
-            conn = http.client.HTTPSConnection("services.leadconnectorhq.com")
-            
-            keys_to_remove = ['dateSelected', 'timeSelected']
-            for key in keys_to_remove:
-                user_data_clean.pop(key)
-                
-            headers = {
-                            'Authorization': f"Bearer {access_token}",
-                            'Version': "2021-07-28",
-                            'Content-Type': "application/json",
-                            'Accept': "application/json"
-                    }
-            
-            conn.request("PUT", f"/calendars/events/appointments/{event_id}", json.dumps(user_data_clean), headers)
+        conn = http.client.HTTPSConnection("services.leadconnectorhq.com")
+
+        keys_to_remove = ['dateSelected', 'timeSelected']
+        for key in keys_to_remove:
+            user_data_clean.pop(key)
         
-            res = conn.getresponse()
-            
-            if res.status == 201 or res.status == 200:
-                return res.status
-            else:
-                return None
+        headers = {
+                    'Authorization': f"Bearer {access_token}",
+                    'Version': "2021-07-28",
+                    'Content-Type': "application/json",
+                    'Accept': "application/json"
+                }
+
+        conn.request("POST", "/calendars/events/appointments", json.dumps(user_data_clean), headers)
+
+        res = conn.getresponse()
+        data = res.read()
+        print("===============================================================")
+        print("Appointment data" ,data)
+        print("===============================================================")
         
-        elif event_id is None:
-            conn = http.client.HTTPSConnection("services.leadconnectorhq.com")
-
-            keys_to_remove = ['dateSelected', 'timeSelected']
-            for key in keys_to_remove:
-                user_data_clean.pop(key)
-            
-            headers = {
-                        'Authorization': f"Bearer {access_token}",
-                        'Version': "2021-07-28",
-                        'Content-Type': "application/json",
-                        'Accept': "application/json"
-                    }
-
-            conn.request("POST", "/calendars/events/appointments", json.dumps(user_data_clean), headers)
-
-            res = conn.getresponse()
-            
-            if res.status == 201 or res.status == 200:
-                return res.status
-            else:
-                return None
+        if res.status == 201 or res.status == 200:
+            return res.status
+        else:
+            return None
 
 
     def update_appointment(self, call_sid , calendar_id, start_time):

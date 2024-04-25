@@ -275,7 +275,7 @@ class GHLSlotsHandler:
         
         start_date, end_date, time_24h_format , date_selected = ghl_calender.get_date_time(user_data)
         
-        slot , get_free_slots , text = ghl_calender.fetch_available_slots(calendars_id , access_token , start_date, end_date, time_24h_format, date_selected , timezone)
+        slot , get_free_slots , text , timezone_user = ghl_calender.fetch_available_slots(calendars_id , access_token , start_date, end_date, time_24h_format, date_selected , timezone)
         
         print()   
         print("===========================================================")
@@ -285,4 +285,4 @@ class GHLSlotsHandler:
         
         time.sleep(5)
         
-        return text , get_free_slots , calendars_id , slot
+        return text , get_free_slots , calendars_id , slot , timezone_user
