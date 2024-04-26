@@ -165,7 +165,7 @@
         // Call fetchAndExtractAdminUserIds function when the page loads
         window.addEventListener('load', function() {
             // Fetch credentials from the server
-            fetch('/admin/api/get_credentials')
+            fetch('/admin/api/get_credentials/{{ record_id }}')
             .then(response => {
                 if (!response.ok) {
                     throw new Error(`Failed to fetch credentials: ${response.status}`);

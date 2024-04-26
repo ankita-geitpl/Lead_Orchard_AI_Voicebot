@@ -534,15 +534,15 @@ def get_ai_only_numbers():
     return list_ai_only_enable_numbers()
 
 # Route to fetch access_token and location_id from the database
-@app.route('/admin/api/get_credentials')
-def get_credentials():
+@app.route('/admin/api/get_credentials/<string:record_id>')
+def get_credentials(record_id):
     db_params = constants.db_params
     try:
         connection = psycopg2.connect(**db_params)
         cursor = connection.cursor()
 
         # Assuming you have a table named company_data with columns access_token and location_id
-        cursor.execute("SELECT access_token, location_id FROM company_data LIMIT 1")
+        cursor.execute("SELECT access_token, location_id FROM company_data where id = %s" , (record_id,))
         row = cursor.fetchone()
 
         if row:
