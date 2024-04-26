@@ -140,29 +140,50 @@ class GHLTaskNotesHandler:
     
     
     def get_admin_id(self , call_sid):
-        access_token = sessions[call_sid]['access_token']
         location_id = sessions[call_sid]['location_id']
+        db_params = constants.db_params
         
-        conn = http.client.HTTPSConnection("services.leadconnectorhq.com")
-        headers = {
-                        'Authorization': f"Bearer {access_token}",
-                        'Version': "2021-07-28",
-                        'Content-Type': "application/json",
-                        'Accept': "application/json"
-                }
-
-        conn.request("GET", f"/users/?locationId={location_id}", headers=headers)
-
-        res = conn.getresponse()
-        data = res.read()
-        user_id_data = data.decode("utf-8")
-        response_data = json.loads(user_id_data)
-        admin_ids = []
-        for user in response_data["users"]:
-                if user["roles"]["role"] == "admin":
-                        admin_ids.append(user["id"])
-
-        return admin_ids[0]
+        try:
+            # Create a connection to the database
+            connection = psycopg2.connect(**db_params)
+            
+            print()
+            print("===========================================================")
+            print("Connected to the database!")
+            print("===========================================================")
+            print()
+            
+            # Create a cursor
+            cursor = connection.cursor()
+ 
+            #  # Check if the phone number exists in the database
+            cursor.execute("SELECT task_assignee_id FROM company_data WHERE location_id = %s", (location_id,))
+            existing_record = cursor.fetchone()
+            if existing_record:
+                task_assignee_id = existing_record[0]
+            else:
+                task_assignee_id = None
+            
+            connection.commit()
+        
+        except Error as e:
+            print()
+            print("===========================================================")
+            print("Error connecting to the database:", e)
+            print("===========================================================")
+            print()
+        
+        finally:
+            if connection:
+                cursor.close()
+                connection.close()
+                print()
+                print("===========================================================")
+                print("Connection closed.")
+                print("===========================================================")
+                print()
+                
+        return task_assignee_id
     
     def create_task(self , call_sid , contact_info): 
         access_token = sessions[call_sid]['access_token']
