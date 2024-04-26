@@ -533,6 +533,33 @@ def get_ai_numbers():
 def get_ai_only_numbers():
     return list_ai_only_enable_numbers()
 
+# Route to fetch access_token and location_id from the database
+@app.route('/admin/api/get_credentials')
+def get_credentials():
+    db_params = constants.db_params
+    try:
+        connection = psycopg2.connect(**db_params)
+        cursor = connection.cursor()
+
+        # Assuming you have a table named company_data with columns access_token and location_id
+        cursor.execute("SELECT access_token, location_id FROM company_data LIMIT 1")
+        row = cursor.fetchone()
+
+        if row:
+            access_token, location_id = row
+            return jsonify({'access_token': access_token, 'location_id': location_id})
+        else:
+            return jsonify({'error': 'No credentials found'})
+
+    except psycopg2.Error as e:
+        print("Error fetching credentials from database:", e)
+        return jsonify({'error': 'Database error'})
+
+    finally:
+        if connection:
+            cursor.close()
+            connection.close()
+
 @app.route('/admin/api/submit_user_info/<string:record_id>', methods=['POST'])
 def submit_user_info(record_id):
     try:
