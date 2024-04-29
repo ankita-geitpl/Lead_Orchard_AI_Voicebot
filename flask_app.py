@@ -78,6 +78,7 @@ def voice():
         sessions[call_sid]['company_name'] = company_name
         sessions[call_sid]['timezone'] = timezone  
         sessions[call_sid]['val'] = 0
+        sessions[call_sid]['val_1'] = 0
         
         contact_check_id = task_create.contact_id_check(call_sid , customer_number)
         if contact_check_id is not None:
@@ -238,12 +239,11 @@ def contact_information():
         sessions[call_sid]['file_name'] = file_name  
         
         today_date = datetime.now()
-
-        if sessions[call_sid]['date_extract'] < str(today_date):
+        if sessions[call_sid]['date_extract'] and (datetime.strptime(sessions[call_sid]['date_extract'] , "%d-%m-%Y") < today_date):
             ai_response = "Please Provide the Future Date !"
             handler = "/contact-information"
 
-        if "Here is the summary of scheduling details".lower() in ai_response.lower():
+        elif "Here is the summary of scheduling details".lower() in ai_response.lower():
             user_contact_info = contact_handler.get_subaccount_info(call_sid , ai_response , customer_number , sessions[call_sid]['date_extract']) 
             
             print()   
@@ -325,9 +325,7 @@ def update_information():
             sessions[call_sid]['date_extract'] = date
             date_extract = sessions[call_sid]['date_extract']
             sessions[call_sid]['val'] = 2
-
-    
-    
+             
     print()   
     print("===========================================================")
     print("Date Update", date_update)
@@ -358,11 +356,11 @@ def update_information():
         
         today_date = datetime.now()
 
-        if sessions[call_sid]['date_update'] < str(today_date):
+        if sessions[call_sid]['date_update'] and (datetime.strptime(sessions[call_sid]['date_update'] , "%d-%m-%Y") < today_date):
             ai_response = "Please Provide the Future Date !"
             handler = "/update-information"
 
-        if "Here is the summary of scheduling details".lower() in ai_response.lower():
+        elif "Here is the summary of scheduling details".lower() in ai_response.lower():
             user_contact_info = contact_handler.get_subaccount_info(call_sid , ai_response , customer_number , sessions[call_sid]['date_update']) 
             
             print()   
@@ -422,29 +420,35 @@ def appointment_confirmation():
     threading.Thread(target=background_task).start()
     result = queue.get()
     
-    text , get_free_slots , calendars_id , slot = result
+    text , get_free_slots , calendars_id , slot , timezone_user = result
     
     sessions[call_sid]['get_free_slots'] = get_free_slots
     sessions[call_sid]['calendars_id'] = calendars_id
     sessions[call_sid]['slot'] = slot
+    sessions[call_sid]['text'] = None
+    sessions[call_sid]['timezone_user'] = timezone_user
 
-    if "Time SLot is Available".lower() in text.lower():
+    if "Time SLot is Available".lower() == text.lower():
         status_code = appointment_create.create_appointment(call_sid , calendars_id  , slot)
 
         if status_code == 201 or status_code == 200:
-            print("Appointment scheduled successfully")
-            ai_ask = f"Your appointment has been scheduled successfully . Thank you for using our service. , if you want to know more about our service feel free to ask"
+            slot = datetime.strptime(slot, '%Y-%m-%dT%H:%M:%S%z').strftime('%Y-%m-%dT%H:%M:%S')
+            date = timezone_fetch.convert_timezone(slot , timezone_user , sessions[call_sid]['timezone'])
+            date_offer , time_offer = timezone_fetch.date_and_time(date)
+            print(f"Appointment scheduled successfully")
+            ai_ask = f"Your appointment has been scheduled successfully for {date_offer} at {time_offer}. Thank you for using our service. , if you want to know more about our service feel free to ask"
             handler = "/handle-voice"
         else:
             print("Failed to schedule appointment")
             ai_ask = "Sorry, I was unable to schedule the appointment. Please try again later."
             handler = "/handle-voice"
         
-    elif "Nearest Time SLot is Available".lower() in text.lower():
+    elif "Nearest Time SLot is Available".lower() == text.lower():
+        sessions[call_sid]['text'] = text
         ai_ask = "This time slot is not available. Would you like me to schedule appointment which is nearest to your mentioned time slot? Please say Yes or No"        
         handler = "/appointment-fixed"
 
-    elif "Time SLot is not Available".lower() in text.lower():
+    elif "Time SLot is not Available".lower() == text.lower():
         ai_ask = "It seems that the time slot for this date is not available. Could you please suggest an alternative date and time for the appointment?"
         handler = "/appointment-fixed"
 
@@ -468,29 +472,35 @@ def appointment_confirmation_two():
     threading.Thread(target=background_task).start()
     result = queue.get()
     
-    text , get_free_slots , calendars_id , slot = result
+    text , get_free_slots , calendars_id , slot , timezone_user = result
     
     sessions[call_sid]['get_free_slots'] = get_free_slots
     sessions[call_sid]['calendars_id'] = calendars_id
     sessions[call_sid]['slot'] = slot
+    sessions[call_sid]['text'] = None
+    sessions[call_sid]['timezone_user'] = timezone_user
 
-    if "Time SLot is Available".lower() in text.lower():
+    if "Time SLot is Available".lower() == text.lower():
         status_code = appointment_create.update_appointment(call_sid , calendars_id  , slot)
 
         if status_code == 201 or status_code == 200:
-            print("Appointment rescheduled successfully")
-            ai_ask = f"Your appointment has been scheduled successfully . Thank you for using our service. , if you want to know more about our service feel free to ask"
+            slot = datetime.strptime(slot, '%Y-%m-%dT%H:%M:%S%z').strftime('%Y-%m-%dT%H:%M:%S')
+            date = timezone_fetch.convert_timezone(slot , timezone_user , sessions[call_sid]['timezone'])
+            date_offer , time_offer = timezone_fetch.date_and_time(date)
+            print(f"Appointment scheduled successfully")
+            ai_ask = f"Your appointment has been scheduled successfully for {date_offer} at {time_offer}. Thank you for using our service. , if you want to know more about our service feel free to ask"
             handler = "/handle-voice"
         else:
             print("Failed to reschedule appointment")
             ai_ask = "Sorry, I was unable to schedule the appointment. Please try again later."
             handler = "/handle-voice"
         
-    elif "Nearest Time SLot is Available".lower() in text.lower():
+    elif "Nearest Time SLot is Available".lower() == text.lower():
+        sessions[call_sid]['text'] = text
         ai_ask = "This time slot is not available. Would you like me to reschedule appointment which is nearest to your mentioned time slot? Please say Yes or No"        
         handler = "/appointment-fixed-two"
 
-    elif "Time SLot is not Available".lower() in text.lower():
+    elif "Time SLot is not Available".lower() == text.lower():
         ai_ask = "It seems that the time slot for this date is not available. Could you please suggest an alternative date and time for the appointment?"
         handler = "/appointment-fixed-two"
 
@@ -509,6 +519,7 @@ def appointment_fixed():
     get_free_slots = sessions[call_sid]['get_free_slots']
     calendars_id = sessions[call_sid]['calendars_id'] 
     slot = sessions[call_sid]['slot']
+    text = sessions[call_sid]['text']
     date_extract = None
     
     date = call_handler.extract_date_and_time(speech_result)
@@ -532,20 +543,23 @@ def appointment_fixed():
     
     today_date = datetime.now()
 
-    if sessions[call_sid]['date_extract'] < str(today_date):
+    if sessions[call_sid]['date_extract'] and (datetime.strptime(sessions[call_sid]['date_extract'] , "%d-%m-%Y") < today_date):
         ai_ask = "Please Provide the Future Date !"
         handler = "/appointment-fixed"
 
 
-    if any(word in speech_result.lower() for word in ['yes', 'yeah', 'sure', 'okay', 'ok' , 'yup']): 
-        if slot.lower() == "No time slot is available".lower():
+    elif any(word in speech_result.lower() for word in ['yes', 'yeah', 'sure', 'okay', 'ok' , 'yup']): 
+        if text.lower() == "Nearest time slot is available".lower():
             slot = get_free_slots[0]
 
         status_code = appointment_create.create_appointment(call_sid , calendars_id  , slot)
 
         if status_code == 201 or status_code == 200:
-            print("Contact created successfully")
-            ai_ask = "Your appointment has been scheduled successfully. Thank you for using our service. , if you want to know more about our service feel free to ask"
+            slot = datetime.strptime(slot, '%Y-%m-%dT%H:%M:%S%z').strftime('%Y-%m-%dT%H:%M:%S')
+            date = timezone_fetch.convert_timezone(slot , sessions[call_sid]['timezone_user'] , sessions[call_sid]['timezone'])
+            date_offer , time_offer = timezone_fetch.date_and_time(date)
+            print(f"Appointment scheduled successfully")
+            ai_ask = f"Your appointment has been scheduled successfully for {date_offer} at {time_offer}. Thank you for using our service. , if you want to know more about our service feel free to ask"
             handler = "/handle-voice"
         else:
             print("Failed to schedule appointment")
@@ -568,28 +582,35 @@ def appointment_fixed():
         
         
         start_date, end_date, time_24h_format , date_selected = ghl_calender.get_date_time(sessions[call_sid]['file_name'] , date_extract)
-        slot , get_free_slots , text = ghl_calender.fetch_available_slots(calendars_id , sessions[call_sid]['access_token'] , start_date, end_date, time_24h_format, date_selected)
+        slot , get_free_slots , text , timezone_user = ghl_calender.fetch_available_slots(calendars_id , sessions[call_sid]['access_token'] , start_date, end_date, time_24h_format, date_selected)
         sessions[call_sid]['get_free_slots'] = get_free_slots
         sessions[call_sid]['calendars_id'] = calendars_id
         sessions[call_sid]['slot'] = slot
+        sessions[call_sid]['text'] = None
+        sessions[call_sid]['timezone_user'] = timezone_user
+        
 
-        if "Time SLot is Available".lower() in text.lower():
+        if "Time SLot is Available".lower() == text.lower():
             status_code = appointment_create.create_appointment(call_sid , calendars_id  , slot)
 
             if status_code == 201 or status_code == 200:
-                print("Appointment scheduled successfully")
-                ai_ask = "Your appointment has been scheduled successfully. Thank you for using our service. , if you want to know more about our service feel free to ask"
+                slot = datetime.strptime(slot, '%Y-%m-%dT%H:%M:%S%z').strftime('%Y-%m-%dT%H:%M:%S')
+                date = timezone_fetch.convert_timezone(slot , timezone_user , sessions[call_sid]['timezone'])
+                date_offer , time_offer = timezone_fetch.date_and_time(date)
+                print(f"Appointment scheduled successfully")
+                ai_ask = f"Your appointment has been scheduled successfully for {date_offer} at {time_offer}. Thank you for using our service. , if you want to know more about our service feel free to ask"
                 handler = "/handle-voice"
             else:
                 print("Failed to schedule appointment")
                 ai_ask = "Sorry, I was unable to schedule the appointment. Please try again later."
                 handler = "/handle-voice"
             
-        elif "Nearest Time SLot is Available".lower() in text.lower():
+        elif "Nearest Time SLot is Available".lower() == text.lower():
+            sessions[call_sid]['text'] = text
             ai_ask = "This time slot is not available. Would you like me to schedule appointment which is nearest to your mentioned time slot? Please say Yes or No"
             handler = "/appointment-fixed" 
             
-        elif "Time SLot is not Available".lower() in text.lower():
+        elif "Time SLot is not Available".lower() == text.lower():
             ai_ask = "It seems that the time slot for this date is not available. Could you please suggest an alternative date and time for the appointment?"
             handler = "/appointment-fixed"
     
@@ -608,6 +629,7 @@ def appointment_fixed_two():
     get_free_slots = sessions[call_sid]['get_free_slots']
     calendars_id = sessions[call_sid]['calendars_id'] 
     slot = sessions[call_sid]['slot']
+    text = sessions[call_sid]['text']
     date_update = None
     
     date = call_handler.extract_date_and_time(speech_result)
@@ -631,20 +653,23 @@ def appointment_fixed_two():
     
     today_date = datetime.now()
 
-    if sessions[call_sid]['date_update'] < str(today_date):
+    if sessions[call_sid]['date_extract'] and (datetime.strptime(sessions[call_sid]['date_extract'] , "%d-%m-%Y") < today_date):
         ai_ask = "Please Provide the Future Date !"
         handler = "/appointment-fixed"
 
 
-    if any(word in speech_result.lower() for word in ['yes', 'yeah', 'sure', 'okay', 'ok' , 'yup']): 
-        if slot.lower() == "No time slot is available".lower():
+    elif any(word in speech_result.lower() for word in ['yes', 'yeah', 'sure', 'okay', 'ok' , 'yup']): 
+        if text.lower() == "No time slot is available".lower():
             slot = get_free_slots[0]
 
         status_code = appointment_create.update_appointment(call_sid , calendars_id  , slot)
 
         if status_code == 201 or status_code == 200:
-            print("Contact created successfully")
-            ai_ask = "Your appointment has been scheduled successfully. Thank you for using our service. , if you want to know more about our service feel free to ask"
+            slot = datetime.strptime(slot, '%Y-%m-%dT%H:%M:%S%z').strftime('%Y-%m-%dT%H:%M:%S')
+            date = timezone_fetch.convert_timezone(slot , sessions[call_sid]['timezone_user'] , sessions[call_sid]['timezone'])
+            date_offer , time_offer = timezone_fetch.date_and_time(date)
+            print(f"Appointment scheduled successfully")
+            ai_ask = f"Your appointment has been scheduled successfully for {date_offer} at {time_offer}. Thank you for using our service. , if you want to know more about our service feel free to ask"
             handler = "/handle-voice"
         else:
             print("Failed to schedule appointment")
@@ -667,28 +692,34 @@ def appointment_fixed_two():
         
         
         start_date, end_date, time_24h_format , date_selected = ghl_calender.get_date_time(sessions[call_sid]['file_name'] , sessions[call_sid]['date_update'])
-        slot , get_free_slots , text = ghl_calender.fetch_available_slots(calendars_id , sessions[call_sid]['access_token'] , start_date, end_date, time_24h_format, date_selected)
+        slot , get_free_slots , text , timezone_user = ghl_calender.fetch_available_slots(calendars_id , sessions[call_sid]['access_token'] , start_date, end_date, time_24h_format, date_selected)
         sessions[call_sid]['get_free_slots'] = get_free_slots
         sessions[call_sid]['calendars_id'] = calendars_id
         sessions[call_sid]['slot'] = slot
+        sessions[call_sid]['text'] = None
+        sessions[call_sid]['timezone_user'] = timezone_user
 
-        if "Time SLot is Available".lower() in text.lower():
+        if "Time SLot is Available".lower() == text.lower():
             status_code = appointment_create.update_appointment(call_sid , calendars_id  , slot)
 
             if status_code == 201 or status_code == 200:
-                print("Appointment rescheduled successfully")
-                ai_ask = "Your appointment has been scheduled successfully. Thank you for using our service. , if you want to know more about our service feel free to ask"
+                slot = datetime.strptime(slot, '%Y-%m-%dT%H:%M:%S%z').strftime('%Y-%m-%dT%H:%M:%S')
+                date = timezone_fetch.convert_timezone(slot , timezone_user , sessions[call_sid]['timezone'])
+                date_offer , time_offer = timezone_fetch.date_and_time(date)
+                print(f"Appointment scheduled successfully")
+                ai_ask = f"Your appointment has been scheduled successfully for {date_offer} at {time_offer}. Thank you for using our service. , if you want to know more about our service feel free to ask"
                 handler = "/handle-voice"
             else:
                 print("Failed to reschedule appointment")
                 ai_ask = "Sorry, I was unable to schedule the appointment. Please try again later."
                 handler = "/handle-voice"
             
-        elif "Nearest Time SLot is Available".lower() in text.lower():
+        elif "Nearest Time SLot is Available".lower() == text.lower():
+            sessions[call_sid]['text'] = text
             ai_ask = "This time slot is not available. Would you like me to schedule appointment which is nearest to your mentioned time slot? Please say Yes or No"
             handler = "/appointment-fixed-two" 
             
-        elif "Time SLot is not Available".lower() in text.lower():
+        elif "Time SLot is not Available".lower() == text.lower():
             ai_ask = "It seems that the time slot for this date is not available. Could you please suggest an alternative date and time for the appointment?"
             handler = "/appointment-fixed-two"
     

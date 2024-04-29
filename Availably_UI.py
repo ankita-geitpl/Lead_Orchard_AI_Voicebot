@@ -532,3 +532,72 @@ def get_ai_numbers():
 @app.route('/ai_only_number_list', methods=['GET'])
 def get_ai_only_numbers():
     return list_ai_only_enable_numbers()
+
+# Route to fetch access_token and location_id from the database
+@app.route('/admin/api/get_credentials/<string:record_id>')
+def get_credentials(record_id):
+    db_params = constants.db_params
+    try:
+        connection = psycopg2.connect(**db_params)
+        cursor = connection.cursor()
+
+        # Assuming you have a table named company_data with columns access_token and location_id
+        cursor.execute("SELECT access_token, location_id FROM company_data where id = %s" , (record_id,))
+        row = cursor.fetchone()
+
+        if row:
+            access_token, location_id = row
+            return jsonify({'access_token': access_token, 'location_id': location_id})
+        else:
+            return jsonify({'error': 'No credentials found'})
+
+    except psycopg2.Error as e:
+        print("Error fetching credentials from database:", e)
+        return jsonify({'error': 'Database error'})
+
+    finally:
+        if connection:
+            cursor.close()
+            connection.close()
+
+@app.route('/admin/api/submit_user_info/<string:record_id>', methods=['POST'])
+def submit_user_info(record_id):
+    try:
+        data = request.json
+        user_id = data.get('userId')
+        user_name = data.get('userName')
+
+        db_params = constants.db_params
+    
+        try:
+            connection = psycopg2.connect(**db_params)
+            cursor = connection.cursor()
+
+            # Check if the record exists
+            cursor.execute("SELECT task_assignee_id FROM company_data WHERE id = %s", (record_id,))
+            row = cursor.fetchone()
+
+            if row is not None:
+                # If record exists, update task_assignee_id
+                cursor.execute("UPDATE company_data SET task_assignee_id = %s WHERE id = %s", (user_id, record_id,))
+            else:
+                # If record doesn't exist, insert new row
+                cursor.execute("INSERT INTO company_data (id, task_assignee_id) VALUES (%s, %s)", (record_id, user_id))
+
+            # Commit the transaction
+            connection.commit()
+
+        except psycopg2.Error as e:
+            print("Error accessing database:", e)
+            return jsonify({'error': 'Database error'})
+
+        finally:
+            if connection:
+                cursor.close()
+                connection.close()
+
+        print(f"Received User Info - User ID: {user_id}, User Name: {user_name}")
+        return jsonify({'message': 'User info received successfully'}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500

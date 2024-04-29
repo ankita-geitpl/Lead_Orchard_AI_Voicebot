@@ -33,5 +33,13 @@ class TimezoneFetch:
         # Format offset as string
         offset_ist_str = "{:0=+3}:{:0=2}".format(offset_ist.days * 24 + offset_ist.seconds // 3600, offset_ist.seconds % 3600 // 60)
         return datetime_ist.strftime("%Y-%m-%dT%H:%M:%S") + offset_ist_str
-
+    
+    def date_and_time(self , date_time):
+        date_time_obj = datetime.fromisoformat(date_time)
+        date = date_time_obj.date()
+        date = datetime.strptime(str(date),'%Y-%m-%d').strftime('%d-%m-%Y') 
+        time = date_time_obj.time()
+        time_obj = datetime.strptime(str(time), '%H:%M:%S') 
+        time_12hr_format = time_obj.strftime('%I:%M %p')
+        return date , time_12hr_format
     
