@@ -76,6 +76,7 @@ class GHLCalendarAPI:
         return calendar_id
 
     def fetch_available_slots(self , calender_id , api_key , start_date, end_date, time_24h_format, date_selected , timezone):
+        timezone_user = timezone
         try:
             conn = http.client.HTTPSConnection("services.leadconnectorhq.com")
 

@@ -216,6 +216,6 @@ class GHLTaskNotesHandler:
         res = conn.getresponse()
         
         if res.status == 201 or res.status == 200:
-            return "Task created successfully!"
+            return "Task created successfully! . If you have any queries , feel free to ask"
         else:  
-            return "Task creation failed!"
+            return "Task creation failed! . Try again after some time"
