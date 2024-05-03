@@ -37,7 +37,6 @@ class TimezoneFetch:
     def date_and_time(self , date_time):
         date_time_obj = datetime.fromisoformat(date_time)
         date = date_time_obj.date()
-        date = datetime.strptime(str(date),'%Y-%m-%d').strftime('%d-%m-%Y') 
         time = date_time_obj.time()
         time_obj = datetime.strptime(str(time), '%H:%M:%S') 
         time_12hr_format = time_obj.strftime('%I:%M %p')
