@@ -18,12 +18,6 @@ class GHLCalendarAPI:
     def get_date_time(self , user_data , date = None):
         with open(user_data, "r") as json_file:    
             user_data_dict = json.load(json_file)
-
-        print()   
-        print("===========================================================")
-        print("Data Dict:", user_data_dict)
-        print("===========================================================")
-        print()
         
         user_data_clean = {key.lstrip('- '): value if '-' in key else value for key, value in user_data_dict.items()}
         
@@ -76,11 +70,7 @@ class GHLCalendarAPI:
         return calendar_id
 
     def fetch_available_slots(self , calender_id , api_key , start_date, end_date, time_24h_format, date_selected , timezone):
-<<<<<<< HEAD
-        import pdb; pdb.set_trace()
-=======
         timezone_user = timezone
->>>>>>> 690fb4a8563c0db12255b9644ef17725aeed0d51
         try:
             conn = http.client.HTTPSConnection("services.leadconnectorhq.com")
 
@@ -103,23 +93,13 @@ class GHLCalendarAPI:
             if "+05:30" in available_slots[0]:
                 time_check = datetime.strptime(date_selected, '%d-%m-%Y').strftime('%Y-%m-%d')+"T"+time_24h_format
                 time_check = timezone_fetch.convert_timezone(time_check , timezone , 'Asia/Calcutta')
-                available_slot_times = [datetime.strptime(slot, '%Y-%m-%dT%H:%M:%S+05:30') for slot in available_slots]
-                print()   
-                print("===========================================================")
-                print("Time COnverted = " , time_check)   
-                print("===========================================================")
-                print()                
-<<<<<<< HEAD
-                if time_check in available_slot_times:
-                        index = available_slot_times.index(time_check)
-=======
+                available_slot_times = [datetime.strptime(slot, '%Y-%m-%dT%H:%M:%S+05:30') for slot in available_slots]            
                 time_check_dt = datetime.strptime(time_check, '%Y-%m-%dT%H:%M:%S-05:30')
                 if time_check_dt in available_slot_times:
                         index = available_slot_times.index(time_check_dt)
->>>>>>> 690fb4a8563c0db12255b9644ef17725aeed0d51
                         nearest_slots = available_slot_times[index:min(index + 2, len(available_slots))]
                 else:
-                        sorted_slots = sorted([slot for slot in available_slot_times if slot > time_check], key=lambda x: abs(x - time_check))
+                        sorted_slots = sorted([slot for slot in available_slot_times if slot > time_check_dt], key=lambda x: abs(x - time_check_dt))
                         nearest_slots = sorted_slots[:2]
 
                 nearest_slots_str = [slot.strftime('%Y-%m-%dT%H:%M:%S+05:30') for slot in nearest_slots]
@@ -130,22 +110,12 @@ class GHLCalendarAPI:
                 time_check = datetime.strptime(date_selected, '%d-%m-%Y').strftime('%Y-%m-%d')+"T"+time_24h_format
                 time_check = timezone_fetch.convert_timezone(time_check , timezone , 'America/New_York')
                 available_slot_times = [datetime.strptime(slot, '%Y-%m-%dT%H:%M:%S-04:00') for slot in available_slots]
-                print()   
-                print("===========================================================")
-                print("Time COnverted = " , time_check)   
-                print("===========================================================")
-                print()
-<<<<<<< HEAD
-                if time_check in available_slot_times:
-                        index = available_slot_times.index(time_check)
-=======
                 time_check_dt = datetime.strptime(time_check, '%Y-%m-%dT%H:%M:%S-04:00')
                 if time_check_dt in available_slot_times:
                         index = available_slot_times.index(time_check_dt)
->>>>>>> 690fb4a8563c0db12255b9644ef17725aeed0d51
                         nearest_slots = available_slot_times[index:min(index + 2, len(available_slots))]
                 else:
-                        sorted_slots = sorted([slot for slot in available_slot_times if slot > time_check], key=lambda x: abs(x - time_check))
+                        sorted_slots = sorted([slot for slot in available_slot_times if slot > time_check_dt], key=lambda x: abs(x - time_check_dt))
                         nearest_slots = sorted_slots[:2]
 
                 nearest_slots_str = [slot.strftime('%Y-%m-%dT%H:%M:%S-04:00') for slot in nearest_slots]
@@ -155,31 +125,19 @@ class GHLCalendarAPI:
             elif "-05:00" in available_slots[0]:
                 time_check = datetime.strptime(date_selected, '%d-%m-%Y').strftime('%Y-%m-%d')+"T"+time_24h_format
                 time_check = timezone_fetch.convert_timezone(time_check , timezone , 'EST')
-                available_slot_times = [datetime.strptime(slot, '%Y-%m-%dT%H:%M:%S-05:00') for slot in available_slots]
-                print()   
-                print("===========================================================")
-                print("Time COnverted = " , time_check)   
-                print("===========================================================")
-                print()                
-<<<<<<< HEAD
-                # time_check_dt = datetime.strptime(time_check, '%Y-%m-%dT%H:%M:%S-04:00')
-                if time_check in available_slot_times:
-                        index = available_slot_times.index(time_check)
-=======
+                available_slot_times = [datetime.strptime(slot, '%Y-%m-%dT%H:%M:%S-05:00') for slot in available_slots]          
                 time_check_dt = datetime.strptime(time_check, '%Y-%m-%dT%H:%M:%S-05:00')
                 if time_check_dt in available_slot_times:
                         index = available_slot_times.index(time_check_dt)
->>>>>>> 690fb4a8563c0db12255b9644ef17725aeed0d51
                         nearest_slots = available_slot_times[index:min(index + 2, len(available_slots))]
                 else:
-                        sorted_slots = sorted([slot for slot in available_slot_times if slot > time_check], key=lambda x: abs(x - time_check))
+                        sorted_slots = sorted([slot for slot in available_slot_times if slot > time_check_dt], key=lambda x: abs(x - time_check_dt))
                         nearest_slots = sorted_slots[:2]
 
                 nearest_slots_str = [slot.strftime('%Y-%m-%dT%H:%M:%S-05:00') for slot in nearest_slots]
                 time_check_str = time_check_dt.strftime('%Y-%m-%dT%H:%M:%S-05:00')
                 timezone_user = 'EST'
-            
-            # import pdb; pdb.set_trace()
+
             if time_check_str in nearest_slots_str:
                 return time_check , nearest_slots_str , "Time SLot is Available" , timezone_user
             else:

@@ -1,5 +1,6 @@
 from dependency import *
 from logic import sessions
+from utters import task_created_message , task_failed_message
 
 class GHLTaskNotesHandler:
     
@@ -19,13 +20,6 @@ class GHLTaskNotesHandler:
         try:
             # Create a connection to the database
             connection = psycopg2.connect(**db_params)
-            
-            print()
-            print("===========================================================")
-            print("Connected to the database!")
-            print("===========================================================")
-            print()
-            
             # Create a cursor
             cursor = connection.cursor()
  
@@ -50,74 +44,22 @@ class GHLTaskNotesHandler:
             if connection:
                 cursor.close()
                 connection.close()
-                print()
-                print("===========================================================")
-                print("Connection closed.")
-                print("===========================================================")
-                print()
                 
         return contact_id
     
     def get_clean_data(self, call_sid, appointment_info, customer_number):
-        if type(appointment_info) is str:
-            start_index = appointment_info.find('{')
-            end_index = appointment_info.rfind('}') + 1
-            json_string = appointment_info[start_index:end_index]
-            
-            parsed_data = json.loads(json_string)
+        start_index = appointment_info.find('{')
+        end_index = appointment_info.rfind('}') + 1
+        json_string = appointment_info[start_index:end_index]
+        
+        data = json.loads(json_string)
 
-            first_name = parsed_data.get("First Name")
-            last_name = parsed_data.get("Last Name")
-            company_name = parsed_data.get("Company Name" , "")
-            title = parsed_data.get("Title")
-            body = parsed_data.get("Description")
-            
-        elif type(appointment_info) is dict:
-            # import pdb; pdb.set_trace()
-            appointment_info = str(appointment_info)
-            try:
-                cleaned_data = appointment_info.replace('\'', '').replace('\\', '')
-
-                # Split the string by commas to get key-value pairs
-                pairs = cleaned_data.split(', ')
-
-                # Initialize variables to store extracted values
-                title = ""
-                first_name = ""
-                last_name = ""
-                company_name = ""
-                body = ""
-
-                # Extract values from key-value pairs
-                for pair in pairs:
-                    key, value = pair.split(': ',1)
-                    key = key.strip('"')
-                    value = value.strip('"')
-
-                    if key == "Title":
-                        title = value
-                        title = title.replace('"', '').replace(',', '')
-                    elif key == "First Name":
-                        first_name = value
-                        first_name = first_name.replace('"', '').replace(',', '')
-                    elif key == "Last Name":
-                        last_name = value
-                        last_name = last_name.replace('"', '').replace(',', '')
-                    elif key == "Company Name":
-                        company_name = value
-                        company_name = company_name.replace('"', '').replace(',', '')
-                    elif key == "Description":
-                        body = value
-                        body = body.replace('"', '').replace(',', '')
-            except:
-                parsed_data = json.loads(appointment_info)
-                # Extract values
-                title = parsed_data.get("Title", "")
-                first_name = parsed_data.get("First Name", "")
-                last_name = parsed_data.get("Last Name", "")
-                company_name = parsed_data.get("Company Name", "")
-                body = parsed_data.get("Description", "")
-
+        # Store values in variables, handling missing values
+        first_name = data.get("First Name", "")
+        last_name = data.get("Last Name", "")
+        company_name = data.get("Company Name" , "")
+        title = data.get("Title")
+        body = data.get("Description")
 
 
         location_id = sessions[call_sid]['location_id']
@@ -135,7 +77,6 @@ class GHLTaskNotesHandler:
             "companyName": company_name,
             "tags": ["By AI software"]
         }
-        
         return user_contact_data
     
     
@@ -146,12 +87,6 @@ class GHLTaskNotesHandler:
         try:
             # Create a connection to the database
             connection = psycopg2.connect(**db_params)
-            
-            print()
-            print("===========================================================")
-            print("Connected to the database!")
-            print("===========================================================")
-            print()
             
             # Create a cursor
             cursor = connection.cursor()
@@ -177,11 +112,6 @@ class GHLTaskNotesHandler:
             if connection:
                 cursor.close()
                 connection.close()
-                print()
-                print("===========================================================")
-                print("Connection closed.")
-                print("===========================================================")
-                print()
                 
         return task_assignee_id
     
@@ -216,6 +146,6 @@ class GHLTaskNotesHandler:
         res = conn.getresponse()
         
         if res.status == 201 or res.status == 200:
-            return "Task created successfully! . If you have any queries , feel free to ask"
+            return task_created_message
         else:  
-            return "Task creation failed! . Try again after some time"
+            return task_failed_message

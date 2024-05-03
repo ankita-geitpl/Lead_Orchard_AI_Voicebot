@@ -29,11 +29,6 @@ class GHLContactHandler:
             try:
                 # Create a connection to the database
                 connection = psycopg2.connect(**db_params)
-                print()   
-                print("===========================================================")
-                print("Connected to the database!")
-                print("===========================================================")
-                print()
                 
                 # Create a cursor
                 cursor = connection.cursor()
@@ -56,11 +51,6 @@ class GHLContactHandler:
                     flag = True
                 
                 connection.commit()
-                print()
-                print("===========================================================")
-                print("Data saved successfully!")
-                print("===========================================================")
-                print()
 
             except Error as e:
                 print()
@@ -74,11 +64,6 @@ class GHLContactHandler:
                 if connection:
                     cursor.close()
                     connection.close()
-                    print()
-                    print("===========================================================")
-                    print("Connection closed.")
-                    print("===========================================================")
-                    print()
         else:
             flag = False
             contact_id = None
@@ -92,11 +77,6 @@ class GHLContactHandler:
         try:
             # Create a connection to the database
             connection = psycopg2.connect(**db_params)
-            print()
-            print("===========================================================")
-            print("Connected to the database!")
-            print("===========================================================")
-            print()
             
             # Create a cursor
             cursor = connection.cursor()
@@ -123,11 +103,6 @@ class GHLContactHandler:
                     sessions[call_sid]['contact_id'] = contact_id
             
             connection.commit()
-            print()
-            print("===========================================================")
-            print("Data saved successfully!")
-            print("===========================================================")
-            print()
 
         except Error as e:
             print()
@@ -140,68 +115,23 @@ class GHLContactHandler:
             if connection:
                 cursor.close()
                 connection.close()
-                print()
-                print("===========================================================")
-                print("Connection closed.")
-                print("===========================================================")
-                print()
                     
-    def get_subaccount_info(self , call_sid , user_appointment_info , customer_number , date_selected):
-        # user_data_clean = {key.lstrip('- '): value if '-' in key else value for key, value in user_appointment_info.items()}
-        if type(user_appointment_info) is str:
-            start_index = user_appointment_info.find('{')
-            end_index = user_appointment_info.rfind('}') + 1
-            json_string = user_appointment_info[start_index:end_index]
-            
-            parsed_data = json.loads(json_string)
-            
-            first_name = parsed_data.get("First Name")
-            last_name = parsed_data.get("Last Name")
-            company_name = parsed_data.get("Company Name" , "")
-            time_selected = parsed_data.get("Time Selected")
-            
-        elif type(user_appointment_info) is dict:
-            user_appointment_info = str(user_appointment_info)
-            try:
-                cleaned_data = user_appointment_info.replace('\'', '').replace('\\', '')
+    def get_subaccount_info_create(self , call_sid , user_appointment_info , customer_number):
+        start_index = user_appointment_info.find('{')
+        end_index = user_appointment_info.rfind('}') + 1
+        json_string = user_appointment_info[start_index:end_index]
+        
+        data = json.loads(json_string)
 
-                # Split the string by commas to get key-value pairs
-                pairs = cleaned_data.split(', ')
-
-                # Initialize variables to store extracted values
-                first_name = ""
-                last_name = ""
-                company_name = ""
-                time_selected = ""
-                # Extract values from key-value pairs
-                for pair in pairs:
-                    key, value = pair.split(': ' , 1)
-                    key = key.strip('"')
-                    value = value.strip('"')
-
-                    if key == "First Name":
-                        first_name = value
-                        first_name = first_name.replace('"', '').replace(',', '')
-                    elif key == "Last Name":
-                        last_name = value
-                        last_name = last_name.replace('"', '').replace(',', '')
-                    elif key == "Company Name":
-                        company_name = value
-                        company_name = company_name.replace('"', '').replace(',', '')
-                    elif key == "Time Selected":
-                        time_selected = value
-                        time_selected = time_selected.replace('"', '').replace(',', '')
-            except:
-                parsed_data = json.loads(user_appointment_info)
-                # Extract values
-                first_name = parsed_data.get("First Name", "")
-                last_name = parsed_data.get("Last Name", "")
-                company_name = parsed_data.get("Company Name", "")
-                time_selected = parsed_data.get("Time Selected", "")
-                
+        # Store values in variables, handling missing values
+        first_name = data.get("First Name", "")
+        last_name = data.get("Last Name", "")
+        date_selected = data.get("Date Selected", "")
+        time_selected = data.get("Time Selected", "")
+        company_name = data.get("Company Name" , "")
         location_id = sessions[call_sid]['location_id']
-        if date_selected is None:
-            date_selected = datetime.now().strftime("%d-%m-%Y")
+        
+        sessions[call_sid]['date_extract'] = date_selected
         
         contact_data = {
             "phone": customer_number,
@@ -216,7 +146,53 @@ class GHLContactHandler:
                     "By AI Software"
                     ]
         }
+        
         return contact_data
+    
+    def get_subaccount_info_update(self , call_sid , user_appointment_info , customer_number):
+        start_index = user_appointment_info.find('{')
+        end_index = user_appointment_info.rfind('}') + 1
+        json_string = user_appointment_info[start_index:end_index]
+        
+        data = json.loads(json_string)
+
+        # Store values in variables, handling missing values
+        first_name = data.get("First Name", "")
+        last_name = data.get("Last Name", "")
+        updated_date_selected = data.get("Updated Date Selected", "")
+        previous_date_selected = data.get("Previous Date Selected", "")
+        time_selected = data.get("Time Selected", "")
+        company_name = data.get("Company Name" , "")
+        location_id = sessions[call_sid]['location_id']
+        
+        
+        contact_data = {
+            "phone": customer_number,
+            "firstName": first_name,
+            "lastName": last_name,
+            "name": first_name + " " + last_name,
+            "locationId": location_id,
+            "companyName": company_name,
+            "dateSelected": updated_date_selected,
+            "timeSelected": time_selected,
+            "tags": [
+                    "By AI Software"
+                    ]
+        }
+        return contact_data , previous_date_selected
+    
+    def get_subaccount_info_2(self , user_appointment_info):
+        # Extract JSON part
+        start_index = user_appointment_info.find('{')
+        end_index = user_appointment_info.rfind('}') + 1
+        json_string = user_appointment_info[start_index:end_index]
+        
+        parsed_data = json.loads(json_string)
+
+        date_selected = parsed_data.get("Date Selected")
+        time_selected = parsed_data.get("Time Selected","")
+
+        return date_selected , time_selected
     
     def create_contact(self, call_sid , user_contact_info , customer_number):
         access_token = sessions[call_sid]['access_token']
@@ -246,13 +222,6 @@ class GHLContactHandler:
             data = res.read()
             response_dict = json.loads(data.decode('utf-8'))
             contact_id = response_dict['contact']['id']
-
-            if res.status == 201 or res.status == 200:
-                print()
-                print("===========================================================")
-                print("Contact created successfully!")
-                print("===========================================================")
-                print()
             flag = False
         
         return contact_id , flag
@@ -287,11 +256,6 @@ class GHLContactHandler:
     def user_data_changer(self , file_name , time , date):
         with open(file_name, "r") as json_file:
             user_data_dict = json.load(json_file)
-        print()
-        print("===========================================================")
-        print("Data Dict:", user_data_dict)
-        print("===========================================================")
-        print()
         
         user_data_dict["dateSelected"] = str(date)
         user_data_dict["timeSelected"] = str(time)

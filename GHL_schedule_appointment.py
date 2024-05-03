@@ -1,5 +1,6 @@
 from dependency import *
 from logic import sessions
+from utters import message_for_no_appointment_scheduled_deletation , appointment_cancellation_message , message_for_error_encountered_while_appointment_cancellation
 
 GHL_APPOINTMENTS_URL = constants.GHL_APPOINTMENTS_URL
 
@@ -34,9 +35,6 @@ class GHLAppointmentHandler:
                 return None
 
         elif date is not None:
-            print("==================================================")
-            print("Date to Delete = " , date)
-            print("==================================================")
             conn = http.client.HTTPSConnection("services.leadconnectorhq.com")
             headers = {
                             'Authorization': f"Bearer {access_token}",
@@ -48,15 +46,22 @@ class GHLAppointmentHandler:
             
             res = conn.getresponse()
             data = res.read()
-            
             user_appoint_data = data.decode("utf-8")
             response_data = json.loads(user_appoint_data)
-            if response_data["events"]:
-                for event in response_data["events"]:
-                    if str(date) in event["startTime"]:
-                        event_id = event["id"]
-                        return event_id
-            else:
+            try:
+                if response_data:
+                    desired_date = datetime.strptime(date, "%d-%m-%Y").strftime("%Y-%m-%d")
+
+                    # Extract ids based on the desired date
+                    ids = [event["id"] for event in response_data["events"] if event["startTime"].startswith(desired_date)]
+
+                    print(ids)
+
+                    return ids[0]
+            
+                else:
+                    return None
+            except:
                 return None
 
 
@@ -102,10 +107,6 @@ class GHLAppointmentHandler:
         conn.request("POST", "/calendars/events/appointments", json.dumps(user_data_clean), headers)
 
         res = conn.getresponse()
-        data = res.read()
-        print("===============================================================")
-        print("Appointment data" ,data)
-        print("===============================================================")
         
         if res.status == 201 or res.status == 200:
             return res.status
@@ -118,15 +119,14 @@ class GHLAppointmentHandler:
         contact_id = sessions[call_sid]['contact_id']
         access_token = sessions[call_sid]['access_token']
         date = sessions[call_sid]['date_extract']
-        
         event_id = self.get_event_id(call_sid , date)
         
         with open(user_data_file, "r") as json_file:    
             user_data = json.load(json_file)
         user_data_clean = {key.lstrip('- '): value if '-' in key else value for key, value in user_data.items()}
-    
+
         end_time = self.slot_mapper(start_time)
-        
+
         # Update data dictionary with calendarId and timezone
         user_data_clean.update({
             "calendarId": calendar_id,
@@ -151,7 +151,6 @@ class GHLAppointmentHandler:
         conn.request("PUT", f"/calendars/events/appointments/{event_id}", json.dumps(user_data_clean), headers)
     
         res = conn.getresponse()
-        
         if res.status == 201 or res.status == 200:
             return res.status
         else:
@@ -160,13 +159,9 @@ class GHLAppointmentHandler:
     def delete_appointment(self , call_sid , date):
             access_token = sessions[call_sid]['access_token']
             event_id = self.get_event_id(call_sid , date)
-            print("===================================================")
-            print("Event id = " , event_id)
-            print("===================================================")
-
             
             if event_id is None:
-                return "There is no appointment scheduled for you . If you have any queries , feel free to ask"
+                return message_for_no_appointment_scheduled_deletation
             
             conn = http.client.HTTPSConnection("services.leadconnectorhq.com")
             headers = {
@@ -176,17 +171,13 @@ class GHLAppointmentHandler:
                             'Accept': "application/json"
                         }
 
-            # conn.request("DELETE", f"/calendars/events/{event_id}", headers)
             conn.request("DELETE", f"/calendars/events/{event_id}", headers=headers)
             res = conn.getresponse()
-            data = res.read()
-            print("===================================================")
-            print(data.decode("utf-8"))
-            print("===================================================")
+            
             if res.status == 201 or res.status == 200:
-                return "Your Appointment is Cancelled Successfully . If you have any queries , feel free to ask"
+                return appointment_cancellation_message
             else:
-                return "Some error occured while cancelling the appointment . Try again after some time"
+                return message_for_error_encountered_while_appointment_cancellation
 
 
 

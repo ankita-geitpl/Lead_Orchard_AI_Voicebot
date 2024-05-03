@@ -498,12 +498,6 @@ def download_files(record_id):
         prompt_file_path = existing_record[0]
         directory_file_path = existing_record[1]
     connection.close()
-    
-    # cursor = db.cursor()
-    # query = "SELECT prompt_file_path, directory_file_path FROM files WHERE location_id = %s"
-    # cursor.execute(query, (location_id,))
-    # result = cursor.fetchone()
-    # cursor.close()
 
     if not existing_record:
         flash("No files found for this location_id", "error")
