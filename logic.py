@@ -1,6 +1,11 @@
 from dependency import *
 import constants
 from GHL_calender_API import *
+from fixed_prompt.create_appointment_prompt import *
+from fixed_prompt.getdatetime_prompt import *
+from fixed_prompt.delete_appointment_prompt import *
+from fixed_prompt.create_task_prompt import *
+from fixed_prompt.update_appointment_prompt import *
 
 
 openai_api_key = os.environ["OPENAI_API_KEY"] = constants.APIKEY
@@ -12,6 +17,11 @@ current_date = datetime.now().date()
 end_of_day = datetime.combine(current_date + timedelta(days=1), datetime.min.time()) - timedelta(seconds=1)
 end_session_time = end_of_day.replace(hour=23, minute=59, second=59)
 
+create_app_prompt = appoint_prompt
+gendatetime_prompt = dt_appoint_prompt
+delete_app_prompt = delete_appoint_prompt
+create_task_prompt = task_prompt
+update_app_prompt = update_appoint_prompt
 
 class TwilioCallHandler:
 
@@ -33,11 +43,6 @@ class TwilioCallHandler:
         try:
             # Create a connection to the database
             connection = psycopg2.connect(**db_params)
-            print()   
-            print("===========================================================")
-            print("Connected to the database!")
-            print("===========================================================")
-            print()
             
             # Create a cursor
             cursor = connection.cursor()
@@ -61,7 +66,9 @@ class TwilioCallHandler:
                     prompt_data += pdf_reader.pages[page_num].extract_text()
 
             if '{context}' not in prompt_data:
-                prompt_data = prompt_data+" : "+"{context}"
+                prompt_data = prompt_data+"\n\n"+create_app_prompt+"\n\n"+gendatetime_prompt+"\n\n"+delete_app_prompt+"\n\n"+create_task_prompt+"\n\n"+update_app_prompt+" : "+"{context}"
+            else:
+                prompt_data = prompt_data+"\n\n"+create_app_prompt+"\n\n"+gendatetime_prompt+"\n\n"+delete_app_prompt+"\n\n"+create_task_prompt+"\n\n"+update_app_prompt
             
             cursor.execute("SELECT data_file_path FROM company_data WHERE phone_number = %s", (company_number,))
             data_pdf_path = cursor.fetchone()[0]
@@ -80,11 +87,6 @@ class TwilioCallHandler:
             if connection:
                 cursor.close()
                 connection.close()
-                print()   
-                print("===========================================================")
-                print("Connection closed.")  
-                print("===========================================================")
-                print()
 
         return user_id , prompt_data , data_pdf_path , location_id , company_id , company_name , access_token
 
@@ -146,34 +148,6 @@ class TwilioCallHandler:
         sentence = re.sub(r'\b(?:tomorrow)\b', tomorrow_date, sentence, flags=re.IGNORECASE)  
         return sentence
 
-    def extract_date_and_time(self , sentence):
-        try:
-            # Preprocess the sentence
-            sentence = self.preprocess_sentence(sentence)
-        
-            parsed_date = parser.parse(sentence, fuzzy_with_tokens=True)
-            date = parsed_date[0].strftime("%d-%m-%Y")  # Format date as dd-mm-yyyy
-        
-            # Regular expressions to find time in the sentence
-            time_patterns = [
-                r'\b\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)?\b',  # HH:MM AM/PM
-                r'\b\d{1,2}\s*(?:AM|PM|am|pm)\b',          # H AM/PM
-                r'\b\d{1,2}:\d{2}\b',                       # HH:MM
-                r'\b\d{1,2}\b',                             # H
-            ]
-        
-            time = None
-            for pattern in time_patterns:
-                time_match = re.search(pattern, sentence)
-                if time_match:
-                    time = time_match.group()
-                    break
-        
-            return date
-        except Exception as e:
-            print("Error:", e)
-            return None      
-    
     def extract_time(self , text):
         # Regular expression to match time in the format hh:mm AM/PM
         if "." in text:
@@ -191,11 +165,6 @@ class TwilioCallHandler:
     def get_documents_from_web(self , data_pdf_path):
         file_loader = PyMuPDFLoader(data_pdf_path)
         documents = file_loader.load()
-        print()
-        print("===========================================================")
-        print("documents:" , documents)
-        print("===========================================================")
-        print()
         
         splitter = RecursiveCharacterTextSplitter(
             chunk_size=800,
@@ -209,11 +178,6 @@ class TwilioCallHandler:
     def create_chain(self, call_sid , vectorStore):
         prompt_data = sessions[call_sid]['prompt_data']
         model = ChatOpenAI(model="gpt-3.5-turbo-1106", temperature=0)
-        print
-        print("===========================================================")
-        print("prompt_data:" , prompt_data)
-        print("===========================================================")
-        print()
         
         prompt = ChatPromptTemplate.from_messages([
             ("system", prompt_data),
@@ -276,12 +240,6 @@ class GHLSlotsHandler:
         start_date, end_date, time_24h_format , date_selected = ghl_calender.get_date_time(user_data)
         
         slot , get_free_slots , text , timezone_user = ghl_calender.fetch_available_slots(calendars_id , access_token , start_date, end_date, time_24h_format, date_selected , timezone)
-        
-        print()   
-        print("===========================================================")
-        print("Free slots:" , get_free_slots)
-        print("===========================================================")
-        print()
         
         time.sleep(5)
         
