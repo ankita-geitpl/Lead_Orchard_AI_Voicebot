@@ -416,15 +416,21 @@ def cancel_appointment():
     call_sid = request.form.get('CallSid')
     speech_result = request.form.get('SpeechResult')
 
-    speech_result = "Goto **SCRIPT FOR DELETE SCHEDULING SUMMARISATION:** to provide the Caller Details Delete Summarization with a title ’Here is your detailed delete Imformation You Provided’"+""+speech_result
-    ai_response = call_handler.run_assistant(call_sid, speech_result)
-    date , _ = contact_handler.get_subaccount_info_2(ai_response) 
-    sessions[call_sid]['date_extract'] = date
-    
-    ai_response = appointment_create.delete_appointment(call_sid , sessions[call_sid]['date_extract'])
-    handler = "/handle-voice"
-    with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '30' , action_on_empty_result = True , action=handler) as gather:
-        gather.say(ai_response , language='en-US')
+    try:
+        speech_result = "Goto **SCRIPT FOR DELETE SCHEDULING SUMMARISATION:** to provide the Caller Details Delete Summarization with a title ’Here is your detailed delete Imformation You Provided’"+""+speech_result
+        ai_response = call_handler.run_assistant(call_sid, speech_result)
+        date , _ = contact_handler.get_subaccount_info_2(ai_response) 
+        sessions[call_sid]['date_extract'] = date
+        
+        ai_response = appointment_create.delete_appointment(call_sid , sessions[call_sid]['date_extract'])
+        handler = "/handle-voice"
+        with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '30' , action_on_empty_result = True , action=handler) as gather:
+            gather.say(ai_response , language='en-US')
+    except:
+        ai_response = no_voice_input_message
+        handler = "/handle-voice"
+        with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '30' , action_on_empty_result = True , action=handler) as gather:
+            gather.say(ai_response , language='en-US')
     
     user_ai_summary.create_summary(request.form.get('CallSid') , request.form.get('CallStatus'))
     return str(response)

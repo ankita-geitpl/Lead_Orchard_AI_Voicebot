@@ -5,4 +5,5 @@ pdf_data/datafile_data/
 pdf_data/file_path/
 pdf_data/prompt_data/
 pdf_data/user_appoint_data/
+fixed_prompt/__pycache__
 __pycache__
