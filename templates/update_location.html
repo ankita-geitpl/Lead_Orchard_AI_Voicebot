@@ -59,12 +59,19 @@
             <div class="form-group">
                 <div class="form-check">
                     <input class="form-check-input" type="checkbox" id="is_ai_only" name="is_ai_only" {% if company_data['is_ai_only'] %} checked {% endif %}>
-                    <label class="form-check-label" for="is_ai_only">Disable for FLEX</label>
+                    <label class="form-check-label" for="is_ai_only">Disable for Flex</label>
                 </div>
             </div>
             <div class="form-group">
                 <label for="adminUserSelect">Select User:</label>
-                <select id="adminUserSelect" class="form-control"></select>
+                {% set found_user = false %}
+                {% set adminID = "" %}
+                <select id="adminUserSelect" name="adminUserSelect" class="form-control">
+                    <option value="">Select user</option>
+                    {% for user in user_list %}
+                        <option value="{{ user["value"] }}" {% if user["value"] == company_data['task_assignee_id']  %} selected {% endif %}>{{ user["text"] }}</option>
+                    {% endfor %}
+                </select>
             </div>          
             <div class="form-group">
                 <label for="prompt_file">Prompt File:</label>
@@ -82,105 +89,6 @@
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <script>
-        // Function to fetch users from the API and extract admin user IDs
-        function fetchAndExtractAdminUserIds(locationId, accessToken) {
-            const url = `https://services.leadconnectorhq.com/users/`;
-            const params = {
-                locationId: locationId
-            };
-            const headers = {
-                'Authorization': `Bearer ${accessToken}`,
-                'Version': "2021-07-28",
-                'Accept': "application/json"
-            };
-        
-            // Convert params object to query string
-            const queryString = new URLSearchParams(params).toString();
-        
-            fetch(`${url}?${queryString}`, {
-                method: 'GET',
-                headers: headers
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch users: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                // Filter users by role
-                const adminUsers = data.users.filter(user => user.roles.role === 'admin');
-                const selectElement = document.getElementById('adminUserSelect');
-        
-                // Add default option
-                const defaultOption = document.createElement('option');
-                defaultOption.value = ""; // You can set this value to an empty string or any other value that makes sense for your application
-                defaultOption.textContent = "Select user";
-                selectElement.appendChild(defaultOption);
-        
-                adminUsers.forEach(user => {
-                    const option = document.createElement('option');
-                    option.value = user.id; // Store user ID as option value
-                    option.textContent = user.name;
-                    selectElement.appendChild(option);
-                });
-        
-                // Add event listener to select element
-                selectElement.addEventListener('change', function() {
-                    const selectedUserId = this.value;
-                    const selectedUserName = this.options[this.selectedIndex].text;
-                    // Call a function to submit selectedUserId and selectedUserName to server
-                    submitUserInfo(selectedUserId, selectedUserName);
-                });
-        
-            })
-            .catch(error => console.error('Error fetching users:', error));
-        }
-        
-
-        // Function to submit selected user ID and user name to server
-        function submitUserInfo(userId, userName) {
-            // Fetch endpoint to submit user ID and user name to server
-            fetch('/admin/api/submit_user_info/{{ record_id }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ userId: userId, userName: userName })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`Failed to submit user info: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                // Handle success response from server if needed
-                console.log('User info submitted successfully:', data);
-            })
-            .catch(error => console.error('Error submitting user info:', error));
-        }
-
-        // Call fetchAndExtractAdminUserIds function when the page loads
-        window.addEventListener('load', function() {
-            // Fetch credentials from the server
-            fetch('/admin/api/get_credentials/{{ record_id }}')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch credentials: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                const { access_token, location_id } = data;
-                fetchAndExtractAdminUserIds(location_id, access_token);
-            })
-            .catch(error => console.error('Error:', error.message));
-        });
-    </script>
-    
-    
             
     <script> 
         $('.toast').toast("show")
