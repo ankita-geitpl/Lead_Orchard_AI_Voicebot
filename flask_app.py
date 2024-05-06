@@ -49,7 +49,7 @@ def voice():
     
     call_sid = request.form.get('CallSid')
     company_number = request.form.get('ForwardedFrom')
-    # to_num = request.form.get('To')
+    to_num = request.form.get('To')
     customer_number = request.form.get('From')
     print()
     print("===========================================================")
@@ -58,10 +58,10 @@ def voice():
     print()
     
     starttime_token = datetime.now()
-    auth_token.generate_auth_token(starttime_token , company_number)
+    auth_token.generate_auth_token(starttime_token , to_num)
     
     session_id = None
-    user_id , prompt_data , data_pdf_path , location_id , company_id , company_name , access_token = call_handler.get_prompt_file(company_number)
+    user_id , prompt_data , data_pdf_path , location_id , company_id , company_name , access_token , gpt_model_id = call_handler.get_prompt_file(to_num)
         
     timezone = timezone_fetch.time_zone_fetch(customer_number)
 
@@ -82,6 +82,7 @@ def voice():
         sessions[call_sid]['company_id'] = company_id
         sessions[call_sid]['company_name'] = company_name
         sessions[call_sid]['timezone'] = timezone  
+        sessions[call_sid]['gpt_model_id'] = gpt_model_id
         
         contact_check_id = task_create.contact_id_check(call_sid , customer_number)
         if contact_check_id is not None:

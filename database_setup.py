@@ -92,12 +92,12 @@ if __name__ == "__main__":
     constraints_to_add_customer_data = []
 
     create_table_query_finetunning_data = """
-    CREATE TABLE IF NOT EXISTS finetunning_data (
-        company_id VARCHAR(255) NOT NULL,
+    CREATE TABLE IF NOT EXISTS finetuning_data (
+        company_id VARCHAR(255) NOT NULL DEFAULT 'DEFAULT',
         company_name TEXT NOT NULL,
         phone_number VARCHAR(20) UNIQUE,
         location_id TEXT NOT NULL,
-        model_id TEXT UNIQUE,
+        model_id TEXT UNIQUE DEFAULT 'gpt-3.5-turbo-1106',
         last_updated_finetune_model TIMESTAMP
     )
     """

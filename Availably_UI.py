@@ -95,11 +95,10 @@ def get_company_data(id):
 
         # Fetch a single row
         row = cur.fetchone()
-
         if row:
             # Construct a dictionary with the fetched data
             company_data = {
-                'id': row[0],
+                'id': row[9],
                 'expires_in': row[3],
                 'location_id': row[6],
                 'phone_number': row[1],
@@ -109,6 +108,8 @@ def get_company_data(id):
                 'is_active': row[19],
                 'api_key': row[7],
                 'is_ai_only': row[20],
+                'task_assignee_id': row[22]
+                
             }
 
         else:
@@ -288,8 +289,165 @@ def list_ai_only_enable_numbers():
         print(e)
         return jsonify({'error': str(e)}), 500
     
+def update_fine_tuned_model(form_data_2):
+    company_name = form_data_2["company_name"]
+    location_id = form_data_2["location_id"]
+    phone_number = form_data_2["phone_number"]
+    db_params = constants.db_params
     
+    try:
+        # Create a connection to the database
+        connection = psycopg2.connect(**db_params)
+        
+        # Create a cursor
+        cursor = connection.cursor()
+        
+        # Fetch the PDF file from the database based on the phone number
+        cursor.execute("SELECT location_id FROM finetunning_data where phone_number = %s", (phone_number,))
+        existing_record = cursor.fetchone()
+        if existing_record:
+            cursor.execute("UPDATE finetunning_data SET company_name = %s , location_id = %s , model_id = %s WHERE phone_number = %s", (company_name, location_id, "gpt-3.5-turbo-1106", phone_number,))
+        else:
+            cursor.execute("INSERT INTO finetunning_data (company_id, company_name, location_id, phone_number , model_id) VALUES (%s, %s, %s, %s , %s)", ("DEFAULT", company_name, location_id, phone_number, "gpt-3.5-turbo-1106"))
+        
+        connection.commit()
     
+    except Error as e:
+                print()
+                print("===========================================================")
+                print("Error connecting to the database:", e)
+                print("===========================================================")
+                print()
+            
+    finally:
+        # Close the cursor and connection
+        if connection:
+            cursor.close()
+            connection.close()
+            
+            
+    # try:
+    #     # Replace these values with your PostgreSQL database information
+    #     db_params = constants.db_params
+
+    #     # Create a connection to the database
+    #     connection = psycopg2.connect(**db_params)
+       
+    #     print("Connected to the database!")
+
+    #     # Create a cursor
+    #     cursor = connection.cursor()
+
+    #     phone = form_data_2["phone_number"]
+       
+    #     # Check if the phone number exists in the database
+    #     cursor.execute("SELECT * FROM finetunning_data WHERE phone_number = %s" , (phone,))
+    #     existing_record = cursor.fetchone()
+    #     if existing_record:    
+    #         # Initialize the SET clause and parameter list
+    #         set_clause = ''
+    #         params = []
+    #         # Construct the SET clause dynamically based on keys present in the remaining data
+    #         for key, value in form_data_2.items():
+    #             for i in range(len(form_data_2)-1):
+    #                 set_clause += f"{key} = %s, "
+    #             params.append(value)
+    #             i += 1
+                
+    #         print(params)
+    #         import pdb; pdb.set_trace()
+
+    #         # Construct and execute the SQL update query
+    #         sql_query = f"UPDATE finetunning_data SET {set_clause.rstrip(', ')} WHERE id = %s"
+    #         print(sql_query)
+
+    #     # Execute the SQL query with parameters
+    #     cursor.execute(sql_query, params)
+
+
+    #     connection.commit()
+
+    #     return True
+
+    # except Error as e:
+    #     flash("Error connecting to the database: {e}", "error")
+    #     return False
+
+    # finally:
+    #     # Close the cursor and connection
+    #     if connection:
+    #         cursor.close()
+    #         connection.close()
+    #         print("Connection closed.")
+
+def list_ghl_account_user(id):
+    try:
+        # Connect to the database
+        db_params = constants.db_params
+    
+        # Create a connection to the database
+        conn = psycopg2.connect(**db_params)
+
+        # Create a cursor object
+        cur = conn.cursor()
+
+        # Execute SQL query to fetch data
+        cur.execute("SELECT * FROM company_data WHERE id = %s LIMIT 1", (id,))
+
+        # Fetch a single row
+        row = cur.fetchone()
+
+        if row:
+            # Construct a dictionary with the fetched data
+            company_data = {
+                'access_token': row[10],
+                'location_id': row[6]
+            }
+
+        else:
+            # Handle case where no row is found for the given id
+            company_data = {}
+        # Return the dictionary as JSON response
+        return fetch_and_extract_admin_user_ids(company_data["location_id"],company_data["access_token"])
+
+    except Exception as e:
+        print("errrors", e)
+        return jsonify({'error': str(e)}), 500
+    
+    finally:
+        # Close the cursor and connection
+        if conn:
+            cur.close()
+            conn.close()
+            print("Connection closed.")
+            
+def fetch_and_extract_admin_user_ids(location_id, access_token):
+    url = 'https://services.leadconnectorhq.com/users/'
+    params = {
+        'locationId': location_id
+    }
+    headers = {
+        'Authorization': f'Bearer {access_token}',
+        'Version': '2021-07-28',
+        'Accept': 'application/json'
+    }
+    
+    # Convert params dictionary to query string
+    query_string = '&'.join([f"{key}={value}" for key, value in params.items()])
+    
+    response = requests.get(f'{url}?{query_string}', headers=headers)
+
+    response.raise_for_status()  # Raise an exception for 4xx or 5xx errors
+    
+    data = response.json()
+    # Filter users by role
+    admin_users = [user for user in data['users'] if user['roles']['role'] == 'admin']
+    admin_user_options = []
+    for user in admin_users:
+        admin_user_options.append({'value': user['id'], 'text': user['name']})
+    
+    return admin_user_options
+      
 # View to render a web page
 @app.route('/admin')
 def home():
@@ -393,11 +551,16 @@ def home():
 @app.route('/admin/update_location/<string:record_id>', methods=['GET', 'POST'])
 def update_location(record_id):
     messages = get_flashed_messages()
+    user_list  = list_ghl_account_user(record_id)
+
+    
     if request.method == 'POST':
         is_active = False
         # Get form datasss
         company_name = request.form['company_name']
         location_id = request.form['location_id']
+        task_assignee_id = request.form['adminUserSelect']
+        
         # api_key =     request.form['api_key']
         if 'is_active' in request.form:
            is_active = True
@@ -448,6 +611,13 @@ def update_location(record_id):
             "phone_number": phone_number,
             # 'api_key': api_key,
             "is_ai_only": is_ai_only,
+            "task_assignee_id": task_assignee_id,
+        }
+        
+        form_data_2 = {
+            "company_name":  company_name,
+            "location_id": location_id,
+            "phone_number": phone_number,
         }
 
         # Add "prompt_file" and "directory_file" to data if present
@@ -460,19 +630,40 @@ def update_location(record_id):
 
         # Update database with the new information
         res =  update_company_data(record_id, form_data)
+        update_fine_tuned_model(form_data_2)
         if res:
            flash('Location Updated Successfully', 'success')
            # Redirect to the Home page
            return redirect('/admin')
         else:
            messages = get_flashed_messages()
-           return render_template('update_location.html',messages=messages, record_id=record_id, company_data= form_data )
+           return render_template('update_location.html',messages=messages, record_id=record_id, company_data= form_data, user_list=user_list)
 
 
     if request.method == "GET":
         # Render the update location form
         company_data =  get_company_data(record_id)
-        return render_template('update_location.html',messages=messages, record_id=record_id, company_data= company_data )
+
+        return render_template('update_location.html',messages=messages, record_id=record_id, company_data= company_data, user_list=user_list)
+    
+    data = request.json
+    user_id = data.get('userId')
+    user_name = data.get('userName')
+
+    db_params = constants.db_params
+    
+    
+    connection = psycopg2.connect(**db_params)
+    cursor = connection.cursor()
+    # Check if the record exists
+    cursor.execute("SELECT task_assignee_id FROM company_data WHERE id = %s", (record_id,))
+    row = cursor.fetchone()
+
+    if row is not None:
+        return True
+    else:
+        # If record doesn't exist, insert new row
+        return False
     
 # Define a route to handle DELETE requests for DELETE location information
 @app.route('/admin/delete_location/<string:record_id>', methods=['POST'])
