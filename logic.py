@@ -57,7 +57,7 @@ class TwilioCallHandler:
             company_name = retrieve_data[4]
             access_token = retrieve_data[5]
 
-            cursor.execute("SELECT model_id from finetunning_data WHERE phone_number = %s", (company_number,))
+            cursor.execute("SELECT model_id from finetuning_data WHERE phone_number = %s", (company_number,))
             retrieve_data = cursor.fetchone()
             gpt_model_id = retrieve_data[0]
             

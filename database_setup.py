@@ -95,9 +95,9 @@ if __name__ == "__main__":
     CREATE TABLE IF NOT EXISTS finetuning_data (
         company_id VARCHAR(255) NOT NULL DEFAULT 'DEFAULT',
         company_name TEXT NOT NULL,
-        phone_number VARCHAR(20) UNIQUE,
+        phone_number VARCHAR(20),
         location_id TEXT NOT NULL,
-        model_id TEXT UNIQUE DEFAULT 'gpt-3.5-turbo-1106',
+        model_id TEXT DEFAULT 'gpt-3.5-turbo-1106',
         last_updated_finetune_model TIMESTAMP
     )
     """

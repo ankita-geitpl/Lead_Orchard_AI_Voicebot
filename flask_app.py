@@ -49,7 +49,6 @@ def voice():
     
     call_sid = request.form.get('CallSid')
     company_number = request.form.get('ForwardedFrom')
-    # to_num = request.form.get('To')
     customer_number = request.form.get('From')
     print()
     print("===========================================================")

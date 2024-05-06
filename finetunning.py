@@ -10,8 +10,8 @@ client = OpenAI(
 class FineTunedModelUpdater:
     def __init__(self) -> None:
         self.db_params = constants.db_params
-        self.dashboard_url_auth_token = constants.dashboard_url_auth_token
-        self.dashboard_url_company_data = constants.dashboard_url_company_data
+        self.dashboard_url_auth_token = constants.DASHBOARD_URL_AUTH_TOKEN
+        self.dashboard_url_company_data = constants.DASHBOARD_URL_COMPANY_DATA
         self.username = constants.dashboard_username
         self.password = constants.dashboard_password
         self.job_id = None
@@ -23,7 +23,7 @@ class FineTunedModelUpdater:
         try:
             connection = psycopg2.connect(**self.db_params)
             cursor = connection.cursor()
-            cursor.execute("SELECT last_updated_finetune_model FROM finetunning_data")
+            cursor.execute("SELECT last_updated_finetune_model FROM finetuning_data")
             last_updated_finetune_model = cursor.fetchall()
             for item in last_updated_finetune_model:
                 for value in item:
@@ -40,14 +40,14 @@ class FineTunedModelUpdater:
             one_month_ago = current_datetime - timedelta(days=30)
             for timestamp in timestamps:
                 if timestamp is None:
-                    cursor.execute("SELECT phone_number FROM finetunning_data WHERE last_updated_finetune_model IS NULL")
+                    cursor.execute("SELECT phone_number FROM finetuning_data WHERE last_updated_finetune_model IS NULL")
                     result = cursor.fetchall()
                     for item in result:
                         for value in item:
                             if value not in phone_numbers:
                                 phone_numbers.append(value)
                 elif timestamp >= one_month_ago:
-                    cursor.execute("SELECT phone_number FROM finetunning_data WHERE last_updated_finetune_model = %s", (timestamp,))
+                    cursor.execute("SELECT phone_number FROM finetuning_data WHERE last_updated_finetune_model = %s", (timestamp,))
                     result = cursor.fetchall()
                     for value in result:
                         phone_numbers.append(value)
@@ -133,8 +133,8 @@ class FineTunedModelUpdater:
             training_data = dataset[:int(len(dataset)*0.8)]
             validation_data = dataset[int(len(dataset)*0.8):]
             
-            train_file_name = "D:/GEITPL/AvailablyVoiceBot-GEITPL/AI-Voicebot-GEITPL/Lead_Orchard_AI_Voicebot/finetune_data/training/"+"train_"+f'{phone_number}_'+organisation_id
-            val_file_name = "D:/GEITPL/AvailablyVoiceBot-GEITPL/AI-Voicebot-GEITPL/Lead_Orchard_AI_Voicebot/finetune_data/validating/"+'val_'+f'{phone_number}_'+organisation_id
+            train_file_name = TRAIN_DATA_SYS_PATH +"train_"+f'{phone_number}_'+organisation_id
+            val_file_name = VAL_DATA_SYS_PATH +'val_'+f'{phone_number}_'+organisation_id
             
             self.prepare_data(training_data, train_file_name)
             self.prepare_data(validation_data, val_file_name)
@@ -202,7 +202,7 @@ class FineTunedModelUpdater:
             try:
                 connection = psycopg2.connect(**self.db_params)
                 cursor = connection.cursor()
-                cursor.execute("UPDATE finetunning_data SET company_id = %s, model_id = %s, last_updated_finetune_model = %s WHERE phone_number = %s", (organisation_id, fine_tuned_model, fine_tune_date_time, phone_number))
+                cursor.execute("UPDATE finetuning_data SET company_id = %s, model_id = %s, last_updated_finetune_model = %s WHERE phone_number = %s", (organisation_id, fine_tuned_model, fine_tune_date_time, phone_number))
                 print("Successfully updated the database")
                 connection.commit()
             except psycopg2.Error as e:

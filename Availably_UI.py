@@ -303,12 +303,12 @@ def update_fine_tuned_model(form_data_2):
         cursor = connection.cursor()
         
         # Fetch the PDF file from the database based on the phone number
-        cursor.execute("SELECT location_id FROM finetunning_data where phone_number = %s", (phone_number,))
+        cursor.execute("SELECT location_id FROM finetuning_data where phone_number = %s", (phone_number,))
         existing_record = cursor.fetchone()
         if existing_record:
-            cursor.execute("UPDATE finetunning_data SET company_name = %s , location_id = %s , model_id = %s WHERE phone_number = %s", (company_name, location_id, "gpt-3.5-turbo-1106", phone_number,))
+            cursor.execute("UPDATE finetuning_data SET company_name = %s , location_id = %s , model_id = %s WHERE phone_number = %s", (company_name, location_id, "gpt-3.5-turbo-1106", phone_number,))
         else:
-            cursor.execute("INSERT INTO finetunning_data (company_id, company_name, location_id, phone_number , model_id) VALUES (%s, %s, %s, %s , %s)", ("DEFAULT", company_name, location_id, phone_number, "gpt-3.5-turbo-1106"))
+            cursor.execute("INSERT INTO finetuning_data (company_id, company_name, location_id, phone_number , model_id) VALUES (%s, %s, %s, %s , %s)", ("DEFAULT", company_name, location_id, phone_number, "gpt-3.5-turbo-1106"))
         
         connection.commit()
     
@@ -324,62 +324,7 @@ def update_fine_tuned_model(form_data_2):
         if connection:
             cursor.close()
             connection.close()
-            
-            
-    # try:
-    #     # Replace these values with your PostgreSQL database information
-    #     db_params = constants.db_params
-
-    #     # Create a connection to the database
-    #     connection = psycopg2.connect(**db_params)
-       
-    #     print("Connected to the database!")
-
-    #     # Create a cursor
-    #     cursor = connection.cursor()
-
-    #     phone = form_data_2["phone_number"]
-       
-    #     # Check if the phone number exists in the database
-    #     cursor.execute("SELECT * FROM finetunning_data WHERE phone_number = %s" , (phone,))
-    #     existing_record = cursor.fetchone()
-    #     if existing_record:    
-    #         # Initialize the SET clause and parameter list
-    #         set_clause = ''
-    #         params = []
-    #         # Construct the SET clause dynamically based on keys present in the remaining data
-    #         for key, value in form_data_2.items():
-    #             for i in range(len(form_data_2)-1):
-    #                 set_clause += f"{key} = %s, "
-    #             params.append(value)
-    #             i += 1
-                
-    #         print(params)
-    #         import pdb; pdb.set_trace()
-
-    #         # Construct and execute the SQL update query
-    #         sql_query = f"UPDATE finetunning_data SET {set_clause.rstrip(', ')} WHERE id = %s"
-    #         print(sql_query)
-
-    #     # Execute the SQL query with parameters
-    #     cursor.execute(sql_query, params)
-
-
-    #     connection.commit()
-
-    #     return True
-
-    # except Error as e:
-    #     flash("Error connecting to the database: {e}", "error")
-    #     return False
-
-    # finally:
-    #     # Close the cursor and connection
-    #     if connection:
-    #         cursor.close()
-    #         connection.close()
-    #         print("Connection closed.")
-
+    
 def list_ghl_account_user(id):
     try:
         # Connect to the database
