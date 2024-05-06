@@ -109,3 +109,4 @@ if __name__ == "__main__":
     create_table_with_columns("company_data", create_table_query_company_data, columns_to_add_company_data, constraints_to_add_company_data)
     create_table_with_columns("customer_data", create_table_query_customer_data, columns_to_add_customer_data, constraints_to_add_customer_data)
     create_table_with_columns("finetunning_data", create_table_query_finetunning_data, columns_to_add_finetunning_data, constraints_to_add_finetunning_data)
+
