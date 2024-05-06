@@ -57,6 +57,9 @@ class TwilioCallHandler:
             company_name = retrieve_data[4]
             access_token = retrieve_data[5]
 
+            cursor.execute("SELECT model_id from finetunning_data WHERE phone_number = %s", (company_number,))
+            retrieve_data = cursor.fetchone()
+            gpt_model_id = retrieve_data[0]
             
             with open(prompt_pdf_path , 'rb') as file:
                 pdf_reader = PdfReader(io.BytesIO(file.read()))
@@ -88,7 +91,7 @@ class TwilioCallHandler:
                 cursor.close()
                 connection.close()
 
-        return user_id , prompt_data , data_pdf_path , location_id , company_id , company_name , access_token
+        return user_id , prompt_data , data_pdf_path , location_id , company_id , company_name , access_token , gpt_model_id
 
     def extract_date(self , text):
         time_cleaned = text.replace('.', '')
@@ -177,7 +180,8 @@ class TwilioCallHandler:
     
     def create_chain(self, call_sid , vectorStore):
         prompt_data = sessions[call_sid]['prompt_data']
-        model = ChatOpenAI(model="gpt-3.5-turbo-1106", temperature=0)
+        gpt_model_id = sessions[call_sid]['gpt_model_id']
+        model = ChatOpenAI(model=gpt_model_id, temperature=0)
         
         prompt = ChatPromptTemplate.from_messages([
             ("system", prompt_data),

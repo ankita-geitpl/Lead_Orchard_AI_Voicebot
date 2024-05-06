@@ -17,6 +17,7 @@ import http.client
 import phonenumbers
 import random
 import signal
+from openai import OpenAI
 from typing import List , Optional
 from phonenumbers import timezone
 from queue import Queue
