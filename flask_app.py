@@ -49,7 +49,7 @@ def voice():
     
     call_sid = request.form.get('CallSid')
     company_number = request.form.get('ForwardedFrom')
-    to_num = request.form.get('To')
+    # to_num = request.form.get('To')
     customer_number = request.form.get('From')
     print()
     print("===========================================================")
@@ -58,10 +58,10 @@ def voice():
     print()
     
     starttime_token = datetime.now()
-    auth_token.generate_auth_token(starttime_token , to_num)
+    auth_token.generate_auth_token(starttime_token , company_number)
     
     session_id = None
-    user_id , prompt_data , data_pdf_path , location_id , company_id , company_name , access_token , gpt_model_id = call_handler.get_prompt_file(to_num)
+    user_id , prompt_data , data_pdf_path , location_id , company_id , company_name , access_token , gpt_model_id = call_handler.get_prompt_file(company_number)
         
     timezone = timezone_fetch.time_zone_fetch(customer_number)
 

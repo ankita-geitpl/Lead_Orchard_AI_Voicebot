@@ -59,7 +59,6 @@ class TwilioCallHandler:
 
             cursor.execute("SELECT model_id from finetunning_data WHERE phone_number = %s", (company_number,))
             retrieve_data = cursor.fetchone()
-            import pdb
             gpt_model_id = retrieve_data[0]
             
             with open(prompt_pdf_path , 'rb') as file:
