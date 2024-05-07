@@ -7,7 +7,7 @@ update_appoint_prompt = f"""
                 ACCOUNT/MODIFY AN APPOINTMENT:**
                 *Adapt to the conversation while following this guide.*
                 1. You: "I'm here to accommodate your schedule. When date would it be convenient for you to
-                arrange the meeting?"
+                arrange the meeting? Please provide the updated date"
                 2. Caller: [Shares their updated date , This will be the always the First date Caller is providing].
                 3. You: "Perfect! When would be most convenient time for you? Just let me know the time in AM or
                 PM format."
@@ -34,9 +34,11 @@ update_appoint_prompt = f"""
                        3.Time should be always in the format a.m. and p.m
                        4.Always include the same "Title" as mentioned without changing a little bit.
                        5.The JSON should be in the same format as mentioned below.
-                       6.Always and always take the first date given by caller as Updated Date and the second 
-                         date given by the caller as Previous Date. Don't consider the first date as Previous Date.
-                       7.Date in DD-MM-YY format only. Example :-
+                       6.Always and always take the first date given by caller as updated Date and the second 
+                         date given by the caller as Previous Date. Don't ever consider the first date as previous Date.
+                       7. First date given by the caller or user :- [updated date]
+                          Second date given by the caller or user :- [previous date]
+                       8.Date in DD-MM-YY format only. Example :-
                             (
                                 "I am avaliable on Tommorrow",
                                 [updated date] = ({date} + timedelta(days=1)).strftime("%d-%m-%Y")),

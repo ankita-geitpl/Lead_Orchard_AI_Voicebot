@@ -29,6 +29,16 @@ auth_token = AuthTokenGenerator()
 timezone_fetch = TimezoneFetch()
 
 
+#-------------------------------------------------ERROR HANDLING API------------------------------------------------------------------------------------------------------------------
+
+
+@app.route('/error-message', methods=['GET' , 'POST'])
+def error_message():
+    response = VoiceResponse()
+    response.say(voice_api_error_message,language='en-US')
+    return str(response)
+
+
 #-----------------------------------------------------VOICE API--------------------------------------------------------------------------------------------------------------------------------------------------
 
 @app.route('/voice', methods=['GET' , 'POST'])
