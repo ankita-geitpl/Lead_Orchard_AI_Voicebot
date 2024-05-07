@@ -313,11 +313,19 @@ def appointment_confirmation():
             slot = datetime.strptime(slot, '%Y-%m-%dT%H:%M:%S%z').strftime('%Y-%m-%dT%H:%M:%S')
             date = timezone_fetch.convert_timezone(slot , timezone_user , sessions[call_sid]['timezone'])
             date_offer , time_offer = timezone_fetch.date_and_time(date)
-            print(f"Appointment scheduled successfully")
+            print()
+            print("===========================================================")
+            print("AI Response: Appointment scheduled successfully")
+            print("===========================================================")
+            print()
             ai_ask = f"Your appointment has been scheduled successfully for {date_offer} at {time_offer}. Thank you for using our service. , Do you have any other questions or is there anything else I can help with?"
             handler = "/handle-voice"
         else:
-            print("Failed to reschedule appointment")
+            print()
+            print("===========================================================")
+            print("AI Response: Failed to reschedule appointment")
+            print("===========================================================")
+            print()
             ai_ask = message_for_failed_appointment
             handler = "/handle-voice"
         
@@ -365,11 +373,19 @@ def appointment_fixed():
             slot = datetime.strptime(slot, '%Y-%m-%dT%H:%M:%S%z').strftime('%Y-%m-%dT%H:%M:%S')
             date = timezone_fetch.convert_timezone(slot , sessions[call_sid]['timezone_user'] , sessions[call_sid]['timezone'])
             date_offer , time_offer = timezone_fetch.date_and_time(date)
-            print(f"Appointment scheduled successfully")
+            print()
+            print("===========================================================")
+            print("AI Response: Appointment scheduled successfully")
+            print("===========================================================")
+            print()
             ai_ask = f"Your appointment has been scheduled successfully for {date_offer} at {time_offer}. Thank you for using our service. , Do you have any other questions or is there anything else I can help with?"
             handler = "/handle-voice"
         else:
-            print("Failed to schedule appointment")
+            print()
+            print("===========================================================")
+            print("AI Response: Failed to reschedule appointment")
+            print("===========================================================")
+            print()
             ai_ask = message_for_failed_appointment
             handler = "/handle-voice"
     
@@ -402,11 +418,19 @@ def appointment_fixed():
                 slot = datetime.strptime(slot, '%Y-%m-%dT%H:%M:%S%z').strftime('%Y-%m-%dT%H:%M:%S')
                 date = timezone_fetch.convert_timezone(slot , timezone_user , sessions[call_sid]['timezone'])
                 date_offer , time_offer = timezone_fetch.date_and_time(date)
-                print(f"Appointment scheduled successfully")
+                print()
+                print("===========================================================")
+                print("AI Response: Appointment scheduled successfully")
+                print("===========================================================")
+                print()
                 ai_ask = f"Your appointment has been scheduled successfully for {date_offer} at {time_offer}. Thank you for using our service. , Do you have any other questions or is there anything else I can help with?"
                 handler = "/handle-voice"
             else:
-                print("Failed to schedule appointment")
+                print()
+                print("===========================================================")
+                print("AI Response: Failed to reschedule appointment")
+                print("===========================================================")
+                print()
                 ai_ask = message_for_failed_appointment
                 handler = "/handle-voice"
             
@@ -436,6 +460,10 @@ def cancel_appointment():
     call_sid = request.form.get('CallSid')
     speech_result = request.form.get('SpeechResult')
 
+    print("===================================================")
+    print("User Input = ",speech_result)
+    print("===================================================")
+
     try:
         speech_result = "Goto **SCRIPT FOR DELETE SCHEDULING SUMMARISATION:** to provide the Caller Details Delete Summarization with a title ’Here is your detailed delete Imformation You Provided’"+""+speech_result
         ai_response = call_handler.run_assistant(call_sid, speech_result)
@@ -443,11 +471,21 @@ def cancel_appointment():
         sessions[call_sid]['date_extract'] = date
         
         ai_response = appointment_create.delete_appointment(call_sid , sessions[call_sid]['date_extract'])
+        print()
+        print("===========================================================")
+        print("AI Response: Appointment cancelled successfully")
+        print("===========================================================")
+        print()
         handler = "/handle-voice"
         with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '30' , action_on_empty_result = True , action=handler) as gather:
             gather.say(ai_response , language='en-US')
     except:
         ai_response = no_voice_input_message
+        print()
+        print("===========================================================")
+        print("AI Response: Failed to cancelled appointment")
+        print("===========================================================")
+        print()
         handler = "/handle-voice"
         with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '30' , action_on_empty_result = True , action=handler) as gather:
             gather.say(ai_response , language='en-US')
@@ -589,11 +627,19 @@ def appointment_confirmation_two():
             slot = datetime.strptime(slot, '%Y-%m-%dT%H:%M:%S%z').strftime('%Y-%m-%dT%H:%M:%S')
             date = timezone_fetch.convert_timezone(slot , timezone_user , sessions[call_sid]['timezone'])
             date_offer , time_offer = timezone_fetch.date_and_time(date)
-            print(f"Appointment rescheduled successfully")
+            print()
+            print("===========================================================")
+            print("AI Response: Appointment rescheduled successfully")
+            print("===========================================================")
+            print()
             ai_ask = f"Your appointment has been rescheduled successfully for {date_offer} at {time_offer}. Thank you for using our service. , Do you have any other questions or is there anything else I can help with?"
             handler = "/handle-voice"
         else:
-            print("Failed to reschedule appointment")
+            print()
+            print("===========================================================")
+            print("AI Response: Failed to rescheduled appointment")
+            print("===========================================================")
+            print()
             ai_ask = message_for_failed_appointment
             handler = "/handle-voice"
         
@@ -642,11 +688,19 @@ def appointment_fixed_two():
             slot = datetime.strptime(slot, '%Y-%m-%dT%H:%M:%S%z').strftime('%Y-%m-%dT%H:%M:%S')
             date = timezone_fetch.convert_timezone(slot , sessions[call_sid]['timezone_user'] , sessions[call_sid]['timezone'])
             date_offer , time_offer = timezone_fetch.date_and_time(date)
-            print(f"Appointment scheduled successfully")
+            print()
+            print("===========================================================")
+            print("AI Response: Appointment rescheduled successfully")
+            print("===========================================================")
+            print()
             ai_ask = f"Your appointment has been scheduled successfully for {date_offer} at {time_offer}. Thank you for using our service. , Do you have any other questions or is there anything else I can help with?"
             handler = "/handle-voice"
         else:
-            print("Failed to schedule appointment")
+            print()
+            print("===========================================================")
+            print("AI Response: Failed to rescheduled appointment")
+            print("===========================================================")
+            print()
             ai_ask = "Sorry, I was unable to schedule the appointment. Please try again later."
             handler = "/handle-voice"
     
@@ -681,11 +735,19 @@ def appointment_fixed_two():
                 slot = datetime.strptime(slot, '%Y-%m-%dT%H:%M:%S%z').strftime('%Y-%m-%dT%H:%M:%S')
                 date = timezone_fetch.convert_timezone(slot , timezone_user , sessions[call_sid]['timezone'])
                 date_offer , time_offer = timezone_fetch.date_and_time(date)
-                print(f"Appointment rescheduled successfully")
+                print()
+                print("===========================================================")
+                print("AI Response: Appointment rescheduled successfully")
+                print("===========================================================")
+                print()
                 ai_ask = f"Your appointment has been rescheduled successfully for {date_offer} at {time_offer}. Thank you for using our service. , Do you have any other questions or is there anything else I can help with?"
                 handler = "/handle-voice"
             else:
-                print("Failed to reschedule appointment")
+                print()
+                print("===========================================================")
+                print("AI Response: Failed to rescheduled appointment")
+                print("===========================================================")
+                print()
                 ai_ask = "Sorry, I was unable to schedule the appointment. Please try again later."
                 handler = "/handle-voice"
             
