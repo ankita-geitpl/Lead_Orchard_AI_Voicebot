@@ -183,6 +183,9 @@ class GHLContactHandler:
     
     def get_subaccount_info_2(self , user_appointment_info):
         # Extract JSON part
+        print("================================================")
+        print("User Updated Data : " , user_appointment_info)
+        print("================================================")
         start_index = user_appointment_info.find('{')
         end_index = user_appointment_info.rfind('}') + 1
         json_string = user_appointment_info[start_index:end_index]

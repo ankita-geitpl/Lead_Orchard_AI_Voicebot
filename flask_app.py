@@ -229,6 +229,16 @@ def contact_information():
             ai_response = waiting_message_for_appointment_creation
             handler = "/appointment-confirmation"
             
+        elif "Here is the update summary of scheduling details".lower() in ai_response.lower():
+            user_contact_info , previous_date = contact_handler.get_subaccount_info_update(call_sid , ai_response , customer_number) 
+            sessions[call_sid]['date_extract'] = previous_date
+            
+            with open(file_name, 'w') as json_file:
+                json.dump(user_contact_info, json_file, indent=4)
+            
+            contact_handler.contact_id_generate(customer_number , call_sid , user_contact_info)
+            ai_response = waiting_message_for_appointment_updation
+            handler = "/appointment-confirmation-two"
         
         elif "Here is the summary".lower() in ai_response.lower() or "Here's the summary".lower() in ai_response.lower():
             user_contact_info = task_create.get_clean_data(call_sid , ai_response , customer_number)
@@ -294,7 +304,7 @@ def appointment_confirmation():
             date = timezone_fetch.convert_timezone(slot , timezone_user , sessions[call_sid]['timezone'])
             date_offer , time_offer = timezone_fetch.date_and_time(date)
             print(f"Appointment scheduled successfully")
-            ai_ask = f"Your appointment has been scheduled successfully for {date_offer} at {time_offer}. Thank you for using our service. , if you want to know more about our service feel free to ask"
+            ai_ask = f"Your appointment has been scheduled successfully for {date_offer} at {time_offer}. Thank you for using our service. , Do you have any other questions or is there anything else I can help with?"
             handler = "/handle-voice"
         else:
             print("Failed to reschedule appointment")
@@ -346,7 +356,7 @@ def appointment_fixed():
             date = timezone_fetch.convert_timezone(slot , sessions[call_sid]['timezone_user'] , sessions[call_sid]['timezone'])
             date_offer , time_offer = timezone_fetch.date_and_time(date)
             print(f"Appointment scheduled successfully")
-            ai_ask = f"Your appointment has been scheduled successfully for {date_offer} at {time_offer}. Thank you for using our service. , if you want to know more about our service feel free to ask"
+            ai_ask = f"Your appointment has been scheduled successfully for {date_offer} at {time_offer}. Thank you for using our service. , Do you have any other questions or is there anything else I can help with?"
             handler = "/handle-voice"
         else:
             print("Failed to schedule appointment")
@@ -383,7 +393,7 @@ def appointment_fixed():
                 date = timezone_fetch.convert_timezone(slot , timezone_user , sessions[call_sid]['timezone'])
                 date_offer , time_offer = timezone_fetch.date_and_time(date)
                 print(f"Appointment scheduled successfully")
-                ai_ask = f"Your appointment has been scheduled successfully for {date_offer} at {time_offer}. Thank you for using our service. , if you want to know more about our service feel free to ask"
+                ai_ask = f"Your appointment has been scheduled successfully for {date_offer} at {time_offer}. Thank you for using our service. , Do you have any other questions or is there anything else I can help with?"
                 handler = "/handle-voice"
             else:
                 print("Failed to schedule appointment")
@@ -490,6 +500,22 @@ def update_information():
             ai_response = waiting_message_for_appointment_updation
             handler = "/appointment-confirmation-two"
             
+        elif "Here is the summary of scheduling details".lower() in ai_response.lower():
+            user_contact_info = contact_handler.get_subaccount_info_create(call_sid , ai_response , customer_number) 
+            
+            print()   
+            print("===========================================================")
+            print("Contact Information:", user_contact_info)
+            print("===========================================================")
+            print()
+            
+            with open(file_name, 'w') as json_file:
+                json.dump(user_contact_info, json_file, indent=4)
+            
+            contact_handler.contact_id_generate(customer_number , call_sid , user_contact_info)
+            ai_response = waiting_message_for_appointment_creation
+            handler = "/appointment-confirmation"
+            
         
         elif "Here is the summary".lower() in ai_response.lower() or "Here's the summary".lower() in ai_response.lower():
             user_contact_info = task_create.get_clean_data(call_sid , ai_response , customer_number)
@@ -554,7 +580,7 @@ def appointment_confirmation_two():
             date = timezone_fetch.convert_timezone(slot , timezone_user , sessions[call_sid]['timezone'])
             date_offer , time_offer = timezone_fetch.date_and_time(date)
             print(f"Appointment rescheduled successfully")
-            ai_ask = f"Your appointment has been rescheduled successfully for {date_offer} at {time_offer}. Thank you for using our service. , if you want to know more about our service feel free to ask"
+            ai_ask = f"Your appointment has been rescheduled successfully for {date_offer} at {time_offer}. Thank you for using our service. , Do you have any other questions or is there anything else I can help with?"
             handler = "/handle-voice"
         else:
             print("Failed to reschedule appointment")
@@ -607,7 +633,7 @@ def appointment_fixed_two():
             date = timezone_fetch.convert_timezone(slot , sessions[call_sid]['timezone_user'] , sessions[call_sid]['timezone'])
             date_offer , time_offer = timezone_fetch.date_and_time(date)
             print(f"Appointment scheduled successfully")
-            ai_ask = f"Your appointment has been scheduled successfully for {date_offer} at {time_offer}. Thank you for using our service. , if you want to know more about our service feel free to ask"
+            ai_ask = f"Your appointment has been scheduled successfully for {date_offer} at {time_offer}. Thank you for using our service. , Do you have any other questions or is there anything else I can help with?"
             handler = "/handle-voice"
         else:
             print("Failed to schedule appointment")
@@ -621,6 +647,9 @@ def appointment_fixed_two():
     else:
         speech_result = "Goto **SCRIPT FOR GENERATING DATE AND TIME:**"+""+speech_result
         ai_response = call_handler.run_assistant(call_sid, speech_result)
+        print("======================================================")
+        print("AI RESPONSE :- ",ai_response)
+        print("========================================================")
         date , time = contact_handler.get_subaccount_info_2(ai_response) 
         sessions[call_sid]['date_update'] = date
         ghl_calender = GHLCalendarAPI()
@@ -643,7 +672,7 @@ def appointment_fixed_two():
                 date = timezone_fetch.convert_timezone(slot , timezone_user , sessions[call_sid]['timezone'])
                 date_offer , time_offer = timezone_fetch.date_and_time(date)
                 print(f"Appointment rescheduled successfully")
-                ai_ask = f"Your appointment has been rescheduled successfully for {date_offer} at {time_offer}. Thank you for using our service. , if you want to know more about our service feel free to ask"
+                ai_ask = f"Your appointment has been rescheduled successfully for {date_offer} at {time_offer}. Thank you for using our service. , Do you have any other questions or is there anything else I can help with?"
                 handler = "/handle-voice"
             else:
                 print("Failed to reschedule appointment")
