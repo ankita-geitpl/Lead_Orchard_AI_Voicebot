@@ -35,7 +35,7 @@ timezone_fetch = TimezoneFetch()
 @app.route('/error-message', methods=['GET' , 'POST'])
 def error_message():
     response = VoiceResponse()
-    response.say(voice_api_error_message,language='en-US')
+    response.say(voice_app_error_message,language='en-US')
     return str(response)
 
 
@@ -44,6 +44,11 @@ def error_message():
 @app.route('/voice', methods=['GET' , 'POST'])
 def voice():
     """Handle incoming voice call."""
+    print()
+    print("===========================================================")
+    print("VOICE HANDLER")
+    print("===========================================================")
+    print()
     global end_session_time
 
     response = VoiceResponse()
@@ -113,6 +118,11 @@ def voice():
 
 @app.route('/handle-voice', methods=['POST'])
 def handle_voice_input():
+    print()
+    print("===========================================================")
+    print("HANDLE-VOICE HANDLER")
+    print("===========================================================")
+    print()
     user_ai_summary.create_summary(request.form.get('CallSid') , request.form.get('CallStatus'))
     response = VoiceResponse()
     speech_result = request.form.get('SpeechResult')
@@ -185,7 +195,13 @@ def handle_voice_input():
 
 
 @app.route('/contact-information', methods=['GET', 'POST'])
+
 def contact_information():
+    print()
+    print("===========================================================")
+    print("CONTACT HANDLER - 1")
+    print("===========================================================")
+    print()
     user_ai_summary.create_summary(request.form.get('CallSid') , request.form.get('CallStatus'))
     response = VoiceResponse()
     speech_result = request.form.get('SpeechResult')
@@ -286,6 +302,11 @@ def contact_information():
 
 @app.route('/appointment-confirmation', methods=['GET' , 'POST'])
 def appointment_confirmation(): 
+    print()
+    print("===========================================================")
+    print("CONTACT HANDLER - 2")
+    print("===========================================================")
+    print()
     user_ai_summary.create_summary(request.form.get('CallSid') , request.form.get('CallStatus'))
     response = VoiceResponse()
     call_sid = request.form.get('CallSid')
@@ -350,6 +371,11 @@ def appointment_confirmation():
 
 @app.route('/appointment-fixed', methods=['POST'])
 def appointment_fixed():
+    print()
+    print("===========================================================")
+    print("CONTACT HANDLER - 3")
+    print("===========================================================")
+    print()
     user_ai_summary.create_summary(request.form.get('CallSid') , request.form.get('CallStatus'))
     response = VoiceResponse()
     speech_result = request.form.get('SpeechResult')
@@ -383,7 +409,7 @@ def appointment_fixed():
         else:
             print()
             print("===========================================================")
-            print("AI Response: Failed to reschedule appointment")
+            print("AI Response: Failed to schedule appointment")
             print("===========================================================")
             print()
             ai_ask = message_for_failed_appointment
@@ -394,8 +420,13 @@ def appointment_fixed():
         handler = "/handle-voice"
         
     else:
-        speech_result = "Goto **SCRIPT FOR GENERATING DATE AND TIME:**"+""+speech_result
+        speech_result = f"Always Goto **SCRIPT FOR GENERATE SCHEDULING SUMMARISATION:** with this {speech_result} to provide the Caller Details Generate Summarization with a title ’Here is your detailed Imformation You Provided’"
         ai_response = call_handler.run_assistant(call_sid, speech_result)
+        print()
+        print("===========================================================")
+        print("AI Response_123:",ai_response)
+        print("===========================================================")
+        print()
         date , time = contact_handler.get_subaccount_info_2(ai_response) 
         sessions[call_sid]['date_extract'] = date
         ghl_calender = GHLCalendarAPI()
@@ -455,6 +486,11 @@ def appointment_fixed():
 
 @app.route('/cancel-appointment', methods=['GET' , 'POST'])
 def cancel_appointment():
+    print()
+    print("===========================================================")
+    print("DELETE HANDLER")
+    print("===========================================================")
+    print()
     user_ai_summary.create_summary(request.form.get('CallSid') , request.form.get('CallStatus'))
     response = VoiceResponse()
     call_sid = request.form.get('CallSid')
@@ -465,20 +501,31 @@ def cancel_appointment():
     print("===================================================")
 
     try:
-        speech_result = "Goto **SCRIPT FOR DELETE SCHEDULING SUMMARISATION:** to provide the Caller Details Delete Summarization with a title ’Here is your detailed delete Imformation You Provided’"+""+speech_result
+        speech_result = f"Always Goto **SCRIPT FOR DELETE SCHEDULING SUMMARISATION:** with this {speech_result} to provide the Caller Details Delete Summarization with a title ’Here is your detailed delete Imformation You Provided’"
         ai_response = call_handler.run_assistant(call_sid, speech_result)
-        date , _ = contact_handler.get_subaccount_info_2(ai_response) 
-        sessions[call_sid]['date_extract'] = date
-        
-        ai_response = appointment_create.delete_appointment(call_sid , sessions[call_sid]['date_extract'])
         print()
         print("===========================================================")
-        print("AI Response: Appointment cancelled successfully")
+        print("AI Response_123:",ai_response)
         print("===========================================================")
         print()
-        handler = "/handle-voice"
-        with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '30' , action_on_empty_result = True , action=handler) as gather:
-            gather.say(ai_response , language='en-US')
+        if "Here is the delete summary of scheduling details".lower() not in ai_response:
+            ai_response = no_voice_input_message
+            handler = "/handle-voice"
+            with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '30' , action_on_empty_result = True , action=handler) as gather:
+                gather.say(ai_response , language='en-US')
+        else:
+            date , _ = contact_handler.get_subaccount_info_2(ai_response) 
+            sessions[call_sid]['date_extract'] = date
+            
+            ai_response = appointment_create.delete_appointment(call_sid , sessions[call_sid]['date_extract'])
+            print()
+            print("===========================================================")
+            print("AI Response: Appointment cancelled successfully")
+            print("===========================================================")
+            print()
+            handler = "/handle-voice"
+            with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '30' , action_on_empty_result = True , action=handler) as gather:
+                gather.say(ai_response , language='en-US')
     except:
         ai_response = no_voice_input_message
         print()
@@ -499,6 +546,11 @@ def cancel_appointment():
 
 @app.route('/update-information', methods=['GET' , 'POST'])
 def update_information():
+    print()
+    print("===========================================================")
+    print("UPDATE HANDLER - 1")
+    print("===========================================================")
+    print()
     user_ai_summary.create_summary(request.form.get('CallSid') , request.form.get('CallStatus'))
     response = VoiceResponse()
     speech_result = request.form.get('SpeechResult')
@@ -600,6 +652,11 @@ def update_information():
 
 @app.route('/appointment-confirmation-two', methods=['GET' , 'POST'])
 def appointment_confirmation_two(): 
+    print()
+    print("===========================================================")
+    print("UPDATE HANDLER - 2")
+    print("===========================================================")
+    print()
     user_ai_summary.create_summary(request.form.get('CallSid') , request.form.get('CallStatus'))
     response = VoiceResponse()
     call_sid = request.form.get('CallSid')
@@ -664,6 +721,11 @@ def appointment_confirmation_two():
 
 @app.route('/appointment-fixed-two', methods=['POST'])
 def appointment_fixed_two():
+    print()
+    print("===========================================================")
+    print("UPDATE HANDLER - 3")
+    print("===========================================================")
+    print()
     user_ai_summary.create_summary(request.form.get('CallSid') , request.form.get('CallStatus'))
     response = VoiceResponse()
     speech_result = request.form.get('SpeechResult')
@@ -709,7 +771,7 @@ def appointment_fixed_two():
         handler = "/handle-voice"
         
     else:
-        speech_result = "Goto **SCRIPT FOR GENERATING DATE AND TIME:**"+""+speech_result
+        speech_result = f"Always Goto **SCRIPT FOR GENERATE SCHEDULING SUMMARISATION:** with this {speech_result} to provide the Caller Details Generate Summarization with a title ’Here is your detailed Imformation You Provided’"
         ai_response = call_handler.run_assistant(call_sid, speech_result)
         print("======================================================")
         print("AI RESPONSE :- ",ai_response)

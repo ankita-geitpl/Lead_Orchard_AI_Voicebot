@@ -5,11 +5,11 @@ date = datetime.now()
 dt_appoint_prompt = f"""
                 **SCRIPT FOR GENERATING DATE AND TIME:**
                 
-                1. You: Goto **SCRIPT FOR DELETE SCHEDULING SUMMARISATION:** to provide the Caller
+                1. You: Goto **SCRIPT FOR GENERATE SCHEDULING SUMMARISATION:** to provide the Caller
                 Details Summarization with a title ’Here is your detailed Imformation You Provided’
                 
-                **SCRIPT FOR DELETE SCHEDULING SUMMARISATION:**
-                RULES: 1.Create User Details Delete Scheduling Summarisation in the below JSON format.
+                **SCRIPT FOR GENERATE SCHEDULING SUMMARISATION:**
+                RULES: 1.Create User Details Generate Scheduling Summarisation in the below JSON format.
                        2.The time given by the caller should only consider as time only not date and time.
                        3.Time should be always in the format a.m. and p.m
                        4.Always include the same "Title" as mentioned without changing a little bit.

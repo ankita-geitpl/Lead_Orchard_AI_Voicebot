@@ -9,5 +9,6 @@ message_for_no_slots_available = "It seems that the time slot for this date is n
 message_for_no_appointment_scheduled_deletation = "There is no appointment scheduled for you . Do you have any other questions or is there anything else I can help with?"
 appointment_cancellation_message = "Your Appointment is Cancelled Successfully . Do you have any other questions or is there anything else I can help with?"
 message_for_error_encountered_while_appointment_cancellation = "Some error occured while cancelling the appointment . Try again after some time"
-waiting_message_for_appointment_updation = "Thanks for your patience! I'm in the process of reschedulling your appointment. Is it okay for you?"
+waiting_message_for_appointment_updation = "Thanks for your patience! I'm in the process of reschedulling your appointment. Is that okay?"
 message_for_nearest_slots_available_for_updation = "This time slot is not available. Would you like me to reschedule appointment which is nearest to your mentioned time slot? Please say Yes or No"
+voice_app_error_message = "I apologize, we encountered an error processing this request, please call back and try again, and thank you for your patience."

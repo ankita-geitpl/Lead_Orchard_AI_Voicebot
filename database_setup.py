@@ -82,7 +82,7 @@ if __name__ == "__main__":
     CREATE TABLE IF NOT EXISTS customer_data (
         company_id VARCHAR(255) NOT NULL,
         company_name TEXT NOT NULL,
-        phone_number VARCHAR(20) UNIQUE,
+        phone_number VARCHAR(20),
         contact_id TEXT UNIQUE,
         location_id TEXT NOT NULL
     )
