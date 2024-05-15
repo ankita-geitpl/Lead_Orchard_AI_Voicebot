@@ -14,7 +14,8 @@ dt_appoint_prompt = f"""
                        3.Time should be always in the format a.m. and p.m
                        4.Always include the same "Title" as mentioned without changing a little bit.
                        5.The JSON should be in the same format as mentioned below.
-                       6.Date in DD-MM-YY format only. Example :-
+                       6.If caller doesnot share any date , then take [date] as {date}
+                       7.Date in DD-MM-YY format only. Example :-
                             (
                                 "I am avaliable on Tommorrow",
                                 [date] = ({date} + timedelta(days=1)).strftime("%d-%m-%Y")),

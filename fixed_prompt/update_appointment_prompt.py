@@ -3,6 +3,10 @@ from datetime import datetime
 date = datetime.now()
 
 update_appoint_prompt = f"""
+                RULES: 1. If Caller want to Reschedule the appointment or wants to update 
+                      the appointment then follow this script.
+                      2. If someone change the answer of a particular question then take 
+                      that changes and then ask that question after the changed question. 
                 **SCRIPT FOR UPDATE AN ACCOUNT/RESCHEDULE THE APPOINTMENT/UPDATE AN
                 ACCOUNT/MODIFY AN APPOINTMENT:**
                 *Adapt to the conversation while following this guide.*

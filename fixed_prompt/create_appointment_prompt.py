@@ -3,6 +3,8 @@ from datetime import datetime
 date = datetime.now()
 
 appoint_prompt = f"""
+                RULES: 1.If someone change the answer of a particular question then take 
+                      that changes and then ask that question after the changed question. 
                 **SCRIPT FOR SETTING UP AN ACCOUNT/GETTING STARTED/REGISTRATION
                 PROCESS/SPEAK TO SALES REPRESENTATIVE/CREATE AN ACCOUNT:**
 

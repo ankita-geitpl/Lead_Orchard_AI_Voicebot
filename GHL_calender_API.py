@@ -94,7 +94,7 @@ class GHLCalendarAPI:
                 time_check = datetime.strptime(date_selected, '%d-%m-%Y').strftime('%Y-%m-%d')+"T"+time_24h_format
                 time_check = timezone_fetch.convert_timezone(time_check , timezone , 'Asia/Calcutta')
                 available_slot_times = [datetime.strptime(slot, '%Y-%m-%dT%H:%M:%S+05:30') for slot in available_slots]            
-                time_check_dt = datetime.strptime(time_check, '%Y-%m-%dT%H:%M:%S-05:30')
+                time_check_dt = datetime.strptime(time_check, '%Y-%m-%dT%H:%M:%S+05:30')
                 if time_check_dt in available_slot_times:
                         index = available_slot_times.index(time_check_dt)
                         nearest_slots = available_slot_times[index:min(index + 2, len(available_slots))]

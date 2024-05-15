@@ -156,7 +156,40 @@ def handle_voice_input():
 
         elif "I'm here to accommodate your schedule".lower() in ai_response.lower():
             handler = "/update-information"
+
+        elif "Here is the summary of scheduling details".lower() in ai_response.lower():
+            user_data_sys_path = constants.USER_DATA_SYS_PATH
+            file_name = user_data_sys_path+customer_number+"+"+company_number+".json"
+            sessions[call_sid]['file_name'] = file_name  
+            user_contact_info = contact_handler.get_subaccount_info_create(call_sid , ai_response , customer_number) 
+            
+            print()   
+            print("===========================================================")
+            print("Contact Information:", user_contact_info)
+            print("===========================================================")
+            print()
+            
+            with open(file_name, 'w') as json_file:
+                json.dump(user_contact_info, json_file, indent=4)
+            
+            contact_handler.contact_id_generate(customer_number , call_sid , user_contact_info)
+            ai_response = waiting_message_for_appointment_creation
+            handler = "/appointment-confirmation"
         
+        elif "Here is the update summary of scheduling details".lower() in ai_response.lower():
+            user_data_sys_path = constants.USER_DATA_SYS_PATH
+            file_name = user_data_sys_path+customer_number+"+"+company_number+".json"
+            sessions[call_sid]['file_name'] = file_name  
+            user_contact_info , previous_date = contact_handler.get_subaccount_info_update(call_sid , ai_response , customer_number) 
+            sessions[call_sid]['date_extract'] = previous_date
+            
+            with open(file_name, 'w') as json_file:
+                json.dump(user_contact_info, json_file, indent=4)
+            
+            contact_handler.contact_id_generate(customer_number , call_sid , user_contact_info)
+            ai_response = waiting_message_for_appointment_updation
+            handler = "/appointment-confirmation-two"
+
         elif "Here is the summary".lower() in ai_response.lower() or "Here's the summary".lower() in ai_response.lower():
             user_contact_info = task_create.get_clean_data(call_sid , ai_response , customer_number)
             
@@ -508,7 +541,7 @@ def cancel_appointment():
         print("AI Response_123:",ai_response)
         print("===========================================================")
         print()
-        if "Here is the delete summary of scheduling details".lower() not in ai_response:
+        if "Here is the delete summary of your scheduling details".lower() not in ai_response.lower():
             ai_response = no_voice_input_message
             handler = "/handle-voice"
             with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '30' , action_on_empty_result = True , action=handler) as gather:
@@ -741,7 +774,7 @@ def appointment_fixed_two():
     print("===================================================")
 
     if any(word in speech_result.lower() for word in ['yes', 'yeah', 'sure', 'okay', 'ok' , 'yup']): 
-        if text.lower() == "No time slot is available".lower():
+        if text.lower() == "Nearest time slot is available".lower():
             slot = get_free_slots[0]
 
         status_code = appointment_create.update_appointment(call_sid , calendars_id  , slot)
