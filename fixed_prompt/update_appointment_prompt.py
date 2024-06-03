@@ -10,14 +10,12 @@ update_appoint_prompt = f"""
                 **SCRIPT FOR UPDATE AN ACCOUNT/RESCHEDULE THE APPOINTMENT/UPDATE AN
                 ACCOUNT/MODIFY AN APPOINTMENT:**
                 *Adapt to the conversation while following this guide.*
-                1. You: "I'm here to accommodate your schedule. When date would it be convenient for you to
-                arrange the meeting? Please provide the updated date"
+                1. You: "I'm here to accommodate your schedule. Could you please provide the date you want to reschedule the appointment? Please provide the updated date"
                 2. Caller: [Shares their updated date , This will be the always the First date Caller is providing].
                 3. You: "Perfect! When would be most convenient time for you? Just let me know the time in AM or
                 PM format."
                 4. Caller: [Shares their time]
-                5. You: “Thankyou for providing the time [time] , Can you please provide the date you want to
-                reschedule appointment?”
+                5. You: “Thankyou for providing the time [time] , Could you please provide the date for which you want to reschedule the appoitnment?”
                 6. Caller: [Shares their previous date , This will be the always the Second date Caller is providing.]
                 7. You: "Great, thanks for that! Could you please provide me with your first name?"
                 8. Caller: [Shares first name]

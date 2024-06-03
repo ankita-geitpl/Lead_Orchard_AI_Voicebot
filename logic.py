@@ -2,10 +2,11 @@ from dependency import *
 import constants
 from GHL_calender_API import *
 from fixed_prompt.create_appointment_prompt import *
-from fixed_prompt.getdatetime_prompt import *
+# from fixed_prompt.getdatetime_prompt import *
 from fixed_prompt.delete_appointment_prompt import *
 from fixed_prompt.create_task_prompt import *
 from fixed_prompt.update_appointment_prompt import *
+from fixed_prompt.getdatetimeappoint_prompt import *
 
 
 openai_api_key = os.environ["OPENAI_API_KEY"] = constants.APIKEY
@@ -93,78 +94,6 @@ class TwilioCallHandler:
 
         return user_id , prompt_data , data_pdf_path , location_id , company_id , company_name , access_token , gpt_model_id
 
-    def extract_date(self , text):
-        time_cleaned = text.replace('.', '')
-        time_cleaned = time_cleaned.lower().replace('i am', '')
-        if "am".lower() not in time_cleaned.lower() and "pm".lower() not in time_cleaned.lower():
-            try:
-                # Check if the text contains references to "today" or "tomorrow"
-                today = datetime.now().date()
-                if 'today' in text.lower():
-                    return today.strftime("%d-%m-%Y")
-                
-                elif 'tomorrow' in text.lower():
-                    tomorrow = today + timedelta(days=1)
-                    return tomorrow.strftime("%d-%m-%Y")
-                
-                # Attempt to parse the date using dateutil.parser
-                if "clock".lower() not in time_cleaned.lower():
-                    parsed_date = parser.parse(text, fuzzy=True)
-                    formatted_date = parsed_date.strftime("%d-%m-%Y")
-                    return formatted_date
-            
-            except ValueError:
-                # If parsing fails, return None
-                return None
-
-    def extract_date_2(self , text):
-        time_cleaned = text.replace('.', '')
-        time_cleaned = time_cleaned.lower().replace('i am', '')
-        if "am".lower() not in time_cleaned.lower() and "pm".lower() not in time_cleaned.lower():
-            try:
-                # Check if the text contains references to "today" or "tomorrow"
-                today = datetime.now().date()
-                if 'today' in text.lower():
-                    return today.strftime("%d-%m-%Y")
-                
-                elif 'tomorrow' in text.lower():
-                    tomorrow = today + timedelta(days=1)
-                    return tomorrow.strftime("%d-%m-%Y")
-                
-                # Attempt to parse the date using dateutil.parser
-                if "clock".lower() not in time_cleaned.lower():
-                    parsed_date = parser.parse(text, fuzzy=True)
-                    formatted_date = parsed_date.strftime("%Y-%m-%d")
-                    return formatted_date
-            
-            except ValueError:
-                # If parsing fails, return None
-                return None
-
-    def preprocess_sentence(self , sentence):
-        # Replace 'today' with today's date
-        today_date = datetime.now().strftime('%d-%m-%Y')
-        sentence = re.sub(r'\b(?:today)\b', today_date, sentence, flags=re.IGNORECASE)
-    
-        # Replace 'tomorrow' with tomorrow's date
-        tomorrow_date = (datetime.now() + timedelta(days=1)).strftime('%d-%m-%Y')
-        sentence = re.sub(r'\b(?:tomorrow)\b', tomorrow_date, sentence, flags=re.IGNORECASE)  
-        return sentence
-
-    def extract_time(self , text):
-        # Regular expression to match time in the format hh:mm AM/PM
-        if "." in text:
-            text = text.lower().replace("." , "")
-        time_pattern = r'\b\d{1,2}\s*(?::\s*\d{2})?\s*(?:AM|PM|am|pm|)?\b'
-
-        # Search for the time pattern in the text
-        time_match = re.search(time_pattern, text)
-
-        if time_match:
-            return time_match.group(0)
-        else:
-            return None
-
     def get_documents_from_web(self , data_pdf_path):
         file_loader = PyMuPDFLoader(data_pdf_path)
         documents = file_loader.load()
@@ -246,5 +175,5 @@ class GHLSlotsHandler:
         slot , get_free_slots , text , timezone_user = ghl_calender.fetch_available_slots(calendars_id , access_token , start_date, end_date, time_24h_format, date_selected , timezone)
         
         time.sleep(5)
-        
+        # print(f"{text}\n{get_free_slots}\n{calendars_id}\n{slot}\n{timezone_user}")
         return text , get_free_slots , calendars_id , slot , timezone_user

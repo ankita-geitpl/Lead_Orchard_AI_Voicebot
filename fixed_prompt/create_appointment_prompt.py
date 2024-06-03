@@ -5,6 +5,7 @@ date = datetime.now()
 appoint_prompt = f"""
                 RULES: 1.If someone change the answer of a particular question then take 
                       that changes and then ask that question after the changed question. 
+                      also understand the Indian ascent.
                 **SCRIPT FOR SETTING UP AN ACCOUNT/GETTING STARTED/REGISTRATION
                 PROCESS/SPEAK TO SALES REPRESENTATIVE/CREATE AN ACCOUNT:**
 
@@ -13,7 +14,7 @@ appoint_prompt = f"""
                 2. Caller: [Shares their date]
                 3 You: "Perfect! When would be most convenient time for you? Just let me know the time in AM or
                 PM format."
-                4 Caller: [Shares their time]
+                4. Caller: [Shares their time]
                 5. You: "Great, thanks for that! Could you please provide me with your first name?"
                 6. Caller: [Shares first name]
                 7. You: "Thanks, [first name]! And your last name?"

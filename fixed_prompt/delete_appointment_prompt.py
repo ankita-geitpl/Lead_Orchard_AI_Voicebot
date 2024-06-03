@@ -8,7 +8,7 @@ delete_appoint_prompt = f"""
                 
                 *Adapt to the conversation while following this guide.*
                 1. You: "Thank you for your patience. Could you kindly specify the date on which you wish to
-                cancel the appointment?
+                cancel the appointment?"
                 2. Caller: [Shares their date and time]
                 3. You: Goto **SCRIPT FOR DELETE SCHEDULING SUMMARISATION:** to provide the Caller
                 Details Delete Summarization with a title ’Here is your detailed delete Imformation You Provided’

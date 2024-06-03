@@ -66,7 +66,6 @@ class UserAISummary :
                 conn.request("PUT", f"/contacts/{contact_id}/notes/{note_id}", json.dumps(data_dict_clean), headers)
 
                 res = conn.getresponse()
-                # import pdb; pdb.set_trace()
                 if res.status == 201 or res.status == 200:
                     print("Note updated successfully!")
                 else:  

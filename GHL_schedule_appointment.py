@@ -151,6 +151,8 @@ class GHLAppointmentHandler:
         conn.request("PUT", f"/calendars/events/appointments/{event_id}", json.dumps(user_data_clean), headers)
     
         res = conn.getresponse()
+        print("===============================response text",res)
+        print("===============================")
         if res.status == 201 or res.status == 200:
             return res.status
         else:

@@ -104,7 +104,7 @@ def voice():
         else:
             sessions[call_sid]['contact_id'] = None  
         
-        with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '30' , action_on_empty_result = True , action='/handle-voice') as gather:
+        with response.gather(input='speech dtmf', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '30' , action_on_empty_result = True , action='/handle-voice') as gather:
             gather.say(call_handler.run_assistant(call_sid, ques='Initial Greeting'),language='en-US')
     
     except Exception as e:
@@ -130,8 +130,7 @@ def handle_voice_input():
     call_sid = request.form.get('CallSid')
     customer_number = request.form.get('From')
     session_id = sessions.get(call_sid, {}).get('session')
-    contact_id = sessions.get(call_sid, {}).get('contact_id')
-    
+    contact_id = sessions.get(call_sid, {}).get('contact_id')    
     if session_id is None:
         session_id = str(random.randint(1000, 999999))
         sessions[call_sid] = {'session': session_id}
@@ -210,14 +209,14 @@ def handle_voice_input():
         else:
             handler = "/handle-voice"
             
-        with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '30' , action_on_empty_result = True , action=handler) as gather:
+        with response.gather(input='speech dtmf', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '30' , action_on_empty_result = True , action=handler) as gather:
             gather.say(ai_response, language='en-US')
              
     else:
         ai_response = no_voice_input_message
         handler = "/handle-voice"
     
-    with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '30' , action_on_empty_result = True , action=handler) as gather:
+    with response.gather(input='speech dtmf', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '30' , action_on_empty_result = True , action=handler) as gather:
         gather.say(ai_response, language='en-US')
     
     user_ai_summary.create_summary(request.form.get('CallSid') , request.form.get('CallStatus'))
@@ -385,7 +384,14 @@ def appointment_confirmation():
         
     elif "Nearest Time SLot is Available".lower() == text.lower():
         sessions[call_sid]['text'] = text
-        ai_ask = message_for_nearest_slots_available        
+        date_time_offer = []
+        for date_time in get_free_slots:
+            slot = datetime.strptime(date_time, '%Y-%m-%dT%H:%M:%S%z').strftime('%Y-%m-%dT%H:%M:%S')
+            date = timezone_fetch.convert_timezone(slot , timezone_user , sessions[call_sid]['timezone'])
+            _ , time_offer_con = timezone_fetch.date_and_time(date)
+            print("==================================================time  ",time_offer_con)
+            date_time_offer.append(time_offer_con)
+        ai_ask = f"This time slot is not available , but we have other time slots for you that are {date_time_offer[0]} and {date_time_offer[1]}"     
         handler = "/appointment-fixed"
 
     elif "Time SLot is not Available".lower() == text.lower():
@@ -422,15 +428,77 @@ def appointment_fixed():
     print("User Input = ",speech_result)
     print("===================================================")
 
-    if any(word in speech_result.lower() for word in ['yes', 'yeah', 'sure', 'okay', 'ok' , 'yup']): 
-        if text.lower() == "Nearest time slot is available".lower():
-            slot = get_free_slots[0]
+    # if any(word in speech_result.lower() for word in ['yes', 'yeah', 'sure', 'okay', 'ok' , 'yup']): 
+    #     if text.lower() == "Nearest time slot is available".lower():
+    #         slot = get_free_slots[0]
 
+    #     status_code = appointment_create.create_appointment(call_sid , calendars_id  , slot)
+
+    #     if status_code == 201 or status_code == 200:
+    #         slot = datetime.strptime(slot, '%Y-%m-%dT%H:%M:%S%z').strftime('%Y-%m-%dT%H:%M:%S')
+    #         date = timezone_fetch.convert_timezone(slot , sessions[call_sid]['timezone_user'] , sessions[call_sid]['timezone'])
+    #         date_offer , time_offer = timezone_fetch.date_and_time(date)
+    #         print()
+    #         print("===========================================================")
+    #         print("AI Response: Appointment scheduled successfully")
+    #         print("===========================================================")
+    #         print()
+    #         ai_ask = f"Your appointment has been scheduled successfully for {date_offer} at {time_offer}. Thank you for using our service. , Do you have any other questions or is there anything else I can help with?"
+    #         handler = "/handle-voice"
+    #     else:
+    #         print()
+    #         print("===========================================================")
+    #         print("AI Response: Failed to schedule appointment")
+    #         print("===========================================================")
+    #         print()
+    #         ai_ask = message_for_failed_appointment
+    #         handler = "/handle-voice"
+    
+    # elif any(word in speech_result.lower() for word in ['no', 'nope', 'not', 'cancel']):
+    #     ai_ask = "Thank you for using our service. If you want to know more about our service feel free to ask"
+    #     handler = "/handle-voice"
+        
+    # else:
+    # print("=======================================CREATE==========================")
+    with open(sessions[call_sid]['file_name'], "r") as json_file:    
+        user_data_dict = json.load(json_file)
+    
+    speech_result = f"""
+    Don't Try to Implement Other Prompts in this like SCRIPT FOR SETTING UP AN ACCOUNT/GETTING STARTED/REGISTRATION PROCESS/SPEAK TO SALES REPRESENTATIVE/CREATE AN ACCOUNT , SCRIPT OF CREATE TASK(BILLING INQUIRY, SERVICE CONFIRMATION, SERVICE COMPLETION, PROVIDE ESTIMATE, SEND QUOTE, UPDATE STATUS, ADDRESS CONCERNS) , SCRIPT FOR CANCEL THE APPOINTMENT/RESCIND APPOINTMENT/REVOKE APPOINTMENT/CALL OFF APPOINTMENT/ABANDON APPOINTMENT , SCRIPT FOR UPDATE AN ACCOUNT/RESCHEDULE THE APPOINTMENT/UPDATE AN ACCOUNT/MODIFY AN APPOINTMENT
+    Don't Try To Include any of the script mentioned above in this , Only Include SCRIPT FOR EXTRACTION OF DATE AND TIME FOR PARTICULAR CALLER this script.
+    Always and Always Go to **SCRIPT FOR EXTRACTION OF DATE AND TIME FOR PARTICULAR CALLER:** with this {speech_result} to provide the Caller Details Extracting Date and Time with a title ’Here is your detailed Imformation You Provided’
+    MORE RULES FOR **SCRIPT FOR EXTRACTION OF DATE AND TIME FOR PARTICULAR CALLER:**
+    7. If Caller give the date , then this value will be consider as [date]. This will be the first priority.
+    8. If Caller doesn't provide any date then Go Through the {user_data_dict} and If the value of dateSelected in {user_data_dict} is not "" then the value of dateselected will be the value for [date]. 
+    9. Also consider the time given by the Caller.
+    """
+    ai_response = call_handler.run_assistant(call_sid, speech_result)
+    print()
+    print("===========================================================")
+    print("AI Response: ",ai_response)
+    print("===========================================================")
+    print()
+    date , time = contact_handler.get_subaccount_info_2(ai_response) 
+    sessions[call_sid]['date_extract'] = date
+    ghl_calender = GHLCalendarAPI()
+    contact_handler.user_data_changer(sessions[call_sid]['file_name'] , time , sessions[call_sid]['date_extract'])
+    
+    
+    start_date, end_date, time_24h_format , date_selected = ghl_calender.get_date_time(sessions[call_sid]['file_name'])
+    slot , get_free_slots , text , timezone_user = ghl_calender.fetch_available_slots(calendars_id , sessions[call_sid]['access_token'] , start_date, end_date, time_24h_format, date_selected , sessions[call_sid]['timezone'])
+    sessions[call_sid]['get_free_slots'] = get_free_slots
+    sessions[call_sid]['calendars_id'] = calendars_id
+    sessions[call_sid]['slot'] = slot
+    sessions[call_sid]['text'] = None
+    sessions[call_sid]['timezone_user'] = timezone_user
+    
+
+    if "Time SLot is Available".lower() == text.lower():
         status_code = appointment_create.create_appointment(call_sid , calendars_id  , slot)
 
         if status_code == 201 or status_code == 200:
             slot = datetime.strptime(slot, '%Y-%m-%dT%H:%M:%S%z').strftime('%Y-%m-%dT%H:%M:%S')
-            date = timezone_fetch.convert_timezone(slot , sessions[call_sid]['timezone_user'] , sessions[call_sid]['timezone'])
+            date = timezone_fetch.convert_timezone(slot , timezone_user , sessions[call_sid]['timezone'])
             date_offer , time_offer = timezone_fetch.date_and_time(date)
             print()
             print("===========================================================")
@@ -447,65 +515,22 @@ def appointment_fixed():
             print()
             ai_ask = message_for_failed_appointment
             handler = "/handle-voice"
-    
-    elif any(word in speech_result.lower() for word in ['no', 'nope', 'not', 'cancel']):
-        ai_ask = "Thank you for using our service. If you want to know more about our service feel free to ask"
-        handler = "/handle-voice"
         
-    else:
-        speech_result = f"Always Goto **SCRIPT FOR GENERATE SCHEDULING SUMMARISATION:** with this {speech_result} to provide the Caller Details Generate Summarization with a title ’Here is your detailed Imformation You Provided’"
-        ai_response = call_handler.run_assistant(call_sid, speech_result)
-        print()
-        print("===========================================================")
-        print("AI Response_123:",ai_response)
-        print("===========================================================")
-        print()
-        date , time = contact_handler.get_subaccount_info_2(ai_response) 
-        sessions[call_sid]['date_extract'] = date
-        ghl_calender = GHLCalendarAPI()
-        contact_handler.user_data_changer(sessions[call_sid]['file_name'] , time , sessions[call_sid]['date_extract'])
+    elif "Nearest Time SLot is Available".lower() == text.lower():
+        sessions[call_sid]['text'] = text
+        date_time_offer = []
+        for date_time in get_free_slots:
+            slot = datetime.strptime(date_time, '%Y-%m-%dT%H:%M:%S%z').strftime('%Y-%m-%dT%H:%M:%S')
+            date = timezone_fetch.convert_timezone(slot , timezone_user , sessions[call_sid]['timezone'])
+            _ , time_offer_con = timezone_fetch.date_and_time(date)
+            print("==================================================time  ",time_offer_con)
+            date_time_offer.append(time_offer_con)
+        ai_ask = f"This time slot is not available , but we have other time slots for you that are {date_time_offer[0]} and {date_time_offer[1]}"     
+        handler = "/appointment-fixed"
         
-        
-        start_date, end_date, time_24h_format , date_selected = ghl_calender.get_date_time(sessions[call_sid]['file_name'])
-        slot , get_free_slots , text , timezone_user = ghl_calender.fetch_available_slots(calendars_id , sessions[call_sid]['access_token'] , start_date, end_date, time_24h_format, date_selected , sessions[call_sid]['timezone'])
-        sessions[call_sid]['get_free_slots'] = get_free_slots
-        sessions[call_sid]['calendars_id'] = calendars_id
-        sessions[call_sid]['slot'] = slot
-        sessions[call_sid]['text'] = None
-        sessions[call_sid]['timezone_user'] = timezone_user
-        
-
-        if "Time SLot is Available".lower() == text.lower():
-            status_code = appointment_create.create_appointment(call_sid , calendars_id  , slot)
-
-            if status_code == 201 or status_code == 200:
-                slot = datetime.strptime(slot, '%Y-%m-%dT%H:%M:%S%z').strftime('%Y-%m-%dT%H:%M:%S')
-                date = timezone_fetch.convert_timezone(slot , timezone_user , sessions[call_sid]['timezone'])
-                date_offer , time_offer = timezone_fetch.date_and_time(date)
-                print()
-                print("===========================================================")
-                print("AI Response: Appointment scheduled successfully")
-                print("===========================================================")
-                print()
-                ai_ask = f"Your appointment has been scheduled successfully for {date_offer} at {time_offer}. Thank you for using our service. , Do you have any other questions or is there anything else I can help with?"
-                handler = "/handle-voice"
-            else:
-                print()
-                print("===========================================================")
-                print("AI Response: Failed to reschedule appointment")
-                print("===========================================================")
-                print()
-                ai_ask = message_for_failed_appointment
-                handler = "/handle-voice"
-            
-        elif "Nearest Time SLot is Available".lower() == text.lower():
-            sessions[call_sid]['text'] = text
-            ai_ask = message_for_nearest_slots_available
-            handler = "/appointment-fixed" 
-            
-        elif "Time SLot is not Available".lower() == text.lower():
-            ai_ask = message_for_no_slots_available
-            handler = "/appointment-fixed"
+    elif "Time SLot is not Available".lower() == text.lower():
+        ai_ask = message_for_no_slots_available
+        handler = "/appointment-fixed"
     
     with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '30' , action_on_empty_result = True , action=handler) as gather:
         gather.say(ai_ask , language='en-US')
@@ -735,7 +760,14 @@ def appointment_confirmation_two():
         
     elif "Nearest Time SLot is Available".lower() == text.lower():
         sessions[call_sid]['text'] = text
-        ai_ask = message_for_nearest_slots_available_for_updation        
+        date_time_offer = []
+        for date_time in get_free_slots:
+            slot = datetime.strptime(date_time, '%Y-%m-%dT%H:%M:%S%z').strftime('%Y-%m-%dT%H:%M:%S')
+            date = timezone_fetch.convert_timezone(slot , timezone_user , sessions[call_sid]['timezone'])
+            _ , time_offer_con = timezone_fetch.date_and_time(date)
+            print("==================================================time  ",time_offer_con)
+            date_time_offer.append(time_offer_con)
+        ai_ask = f"This time slot is not available , but we have other time slots for you that are {date_time_offer[0]} and {date_time_offer[1]}"           
         handler = "/appointment-fixed-two"
 
     elif "Time SLot is not Available".lower() == text.lower():
@@ -773,22 +805,83 @@ def appointment_fixed_two():
     print("User Input = ",speech_result)
     print("===================================================")
 
-    if any(word in speech_result.lower() for word in ['yes', 'yeah', 'sure', 'okay', 'ok' , 'yup']): 
-        if text.lower() == "Nearest time slot is available".lower():
-            slot = get_free_slots[0]
+    # if any(word in speech_result.lower() for word in ['yes', 'yeah', 'sure', 'okay', 'ok' , 'yup']): 
+    #     if text.lower() == "Nearest time slot is available".lower():
+    #         slot = get_free_slots[0]
 
+    #     status_code = appointment_create.update_appointment(call_sid , calendars_id  , slot)
+
+    #     if status_code == 201 or status_code == 200:
+    #         slot = datetime.strptime(slot, '%Y-%m-%dT%H:%M:%S%z').strftime('%Y-%m-%dT%H:%M:%S')
+    #         date = timezone_fetch.convert_timezone(slot , sessions[call_sid]['timezone_user'] , sessions[call_sid]['timezone'])
+    #         date_offer , time_offer = timezone_fetch.date_and_time(date)
+    #         print()
+    #         print("===========================================================")
+    #         print("AI Response: Appointment rescheduled successfully")
+    #         print("===========================================================")
+    #         print()
+    #         ai_ask = f"Your appointment has been scheduled successfully for {date_offer} at {time_offer}. Thank you for using our service. , Do you have any other questions or is there anything else I can help with?"
+    #         handler = "/handle-voice"
+    #     else:
+    #         print()
+    #         print("===========================================================")
+    #         print("AI Response: Failed to rescheduled appointment")
+    #         print("========================Always and anyhow refers===================================")
+    #         print()
+    #         ai_ask = "Sorry, I was unable to schedule the appointment. Please try again later."
+    #         handler = "/handle-voice"
+    
+    # elif any(word in speech_result.lower() for word in ['no', 'nope', 'not', 'cancel']):
+    #     ai_ask = "Thank you for using our service. If you want to know more about our service feel free to ask"
+    #     handler = "/handle-voice"
+        
+    # else:
+    #     print("=================================UPDATE============================")
+    with open(sessions[call_sid]['file_name'], "r") as json_file:    
+        user_data_dict = json.load(json_file)
+    
+    speech_result = f"""
+    Don't Try to Implement Other Prompts in this like SCRIPT FOR SETTING UP AN ACCOUNT/GETTING STARTED/REGISTRATION PROCESS/SPEAK TO SALES REPRESENTATIVE/CREATE AN ACCOUNT , SCRIPT OF CREATE TASK(BILLING INQUIRY, SERVICE CONFIRMATION, SERVICE COMPLETION, PROVIDE ESTIMATE, SEND QUOTE, UPDATE STATUS, ADDRESS CONCERNS) , SCRIPT FOR CANCEL THE APPOINTMENT/RESCIND APPOINTMENT/REVOKE APPOINTMENT/CALL OFF APPOINTMENT/ABANDON APPOINTMENT , SCRIPT FOR UPDATE AN ACCOUNT/RESCHEDULE THE APPOINTMENT/UPDATE AN ACCOUNT/MODIFY AN APPOINTMENT
+    Don't Try To Include any of the script mentioned above in this , Only Include SCRIPT FOR EXTRACTION OF DATE AND TIME FOR PARTICULAR CALLER this script.
+    Always and Always Go to **SCRIPT FOR EXTRACTION OF DATE AND TIME FOR PARTICULAR CALLER:** with this {speech_result} to provide the Caller Details Extracting Date and Time with a title ’Here is your detailed Imformation You Provided’
+    MORE RULES FOR **SCRIPT FOR EXTRACTION OF DATE AND TIME FOR PARTICULAR CALLER:**
+    7. If Caller give the date , then this value will be consider as [date]. This will be the first priority.
+    8. If Caller doesn't provide any date then Go Through the {user_data_dict} and If the value of dateSelected in {user_data_dict} is not "" then the value of dateselected will be the value for [date]. 
+    9. Also consider the time given by the Caller.
+    """
+    ai_response = call_handler.run_assistant(call_sid, speech_result)
+    print()
+    print("===========================================================")
+    print("AI Response: ",ai_response)
+    print("===========================================================")
+    print()
+    date , time = contact_handler.get_subaccount_info_2(ai_response) 
+    sessions[call_sid]['date_update'] = date
+    ghl_calender = GHLCalendarAPI()
+    contact_handler.user_data_changer(sessions[call_sid]['file_name'] , time , sessions[call_sid]['date_update'])
+    
+    
+    start_date, end_date, time_24h_format , date_selected = ghl_calender.get_date_time(sessions[call_sid]['file_name'])
+    slot , get_free_slots , text , timezone_user = ghl_calender.fetch_available_slots(calendars_id , sessions[call_sid]['access_token'] , start_date, end_date, time_24h_format, date_selected , sessions[call_sid]['timezone'])
+    sessions[call_sid]['get_free_slots'] = get_free_slots
+    sessions[call_sid]['calendars_id'] = calendars_id
+    sessions[call_sid]['slot'] = slot
+    sessions[call_sid]['text'] = None
+    sessions[call_sid]['timezone_user'] = timezone_user
+
+    if "Time SLot is Available".lower() == text.lower():
         status_code = appointment_create.update_appointment(call_sid , calendars_id  , slot)
 
         if status_code == 201 or status_code == 200:
             slot = datetime.strptime(slot, '%Y-%m-%dT%H:%M:%S%z').strftime('%Y-%m-%dT%H:%M:%S')
-            date = timezone_fetch.convert_timezone(slot , sessions[call_sid]['timezone_user'] , sessions[call_sid]['timezone'])
+            date = timezone_fetch.convert_timezone(slot , timezone_user , sessions[call_sid]['timezone'])
             date_offer , time_offer = timezone_fetch.date_and_time(date)
             print()
             print("===========================================================")
             print("AI Response: Appointment rescheduled successfully")
             print("===========================================================")
             print()
-            ai_ask = f"Your appointment has been scheduled successfully for {date_offer} at {time_offer}. Thank you for using our service. , Do you have any other questions or is there anything else I can help with?"
+            ai_ask = f"Your appointment has been rescheduled successfully for {date_offer} at {time_offer}. Thank you for using our service. , Do you have any other questions or is there anything else I can help with?"
             handler = "/handle-voice"
         else:
             print()
@@ -798,62 +891,22 @@ def appointment_fixed_two():
             print()
             ai_ask = "Sorry, I was unable to schedule the appointment. Please try again later."
             handler = "/handle-voice"
-    
-    elif any(word in speech_result.lower() for word in ['no', 'nope', 'not', 'cancel']):
-        ai_ask = "Thank you for using our service. If you want to know more about our service feel free to ask"
-        handler = "/handle-voice"
         
-    else:
-        speech_result = f"Always Goto **SCRIPT FOR GENERATE SCHEDULING SUMMARISATION:** with this {speech_result} to provide the Caller Details Generate Summarization with a title ’Here is your detailed Imformation You Provided’"
-        ai_response = call_handler.run_assistant(call_sid, speech_result)
-        print("======================================================")
-        print("AI RESPONSE :- ",ai_response)
-        print("========================================================")
-        date , time = contact_handler.get_subaccount_info_2(ai_response) 
-        sessions[call_sid]['date_update'] = date
-        ghl_calender = GHLCalendarAPI()
-        contact_handler.user_data_changer(sessions[call_sid]['file_name'] , time , sessions[call_sid]['date_update'])
+    elif "Nearest Time SLot is Available".lower() == text.lower():
+        sessions[call_sid]['text'] = text
+        date_time_offer = []
+        for date_time in get_free_slots:
+            slot = datetime.strptime(date_time, '%Y-%m-%dT%H:%M:%S%z').strftime('%Y-%m-%dT%H:%M:%S')
+            date = timezone_fetch.convert_timezone(slot , timezone_user , sessions[call_sid]['timezone'])
+            _ , time_offer_con = timezone_fetch.date_and_time(date)
+            print("==================================================time  ",time_offer_con)
+            date_time_offer.append(time_offer_con)
+        ai_ask = f"This time slot is not available , but we have other time slots for you that are {date_time_offer[0]} and {date_time_offer[1]}"     
+        handler = "/appointment-fixed-two" 
         
-        
-        start_date, end_date, time_24h_format , date_selected = ghl_calender.get_date_time(sessions[call_sid]['file_name'])
-        slot , get_free_slots , text , timezone_user = ghl_calender.fetch_available_slots(calendars_id , sessions[call_sid]['access_token'] , start_date, end_date, time_24h_format, date_selected , sessions[call_sid]['timezone'])
-        sessions[call_sid]['get_free_slots'] = get_free_slots
-        sessions[call_sid]['calendars_id'] = calendars_id
-        sessions[call_sid]['slot'] = slot
-        sessions[call_sid]['text'] = None
-        sessions[call_sid]['timezone_user'] = timezone_user
-
-        if "Time SLot is Available".lower() == text.lower():
-            status_code = appointment_create.update_appointment(call_sid , calendars_id  , slot)
-
-            if status_code == 201 or status_code == 200:
-                slot = datetime.strptime(slot, '%Y-%m-%dT%H:%M:%S%z').strftime('%Y-%m-%dT%H:%M:%S')
-                date = timezone_fetch.convert_timezone(slot , timezone_user , sessions[call_sid]['timezone'])
-                date_offer , time_offer = timezone_fetch.date_and_time(date)
-                print()
-                print("===========================================================")
-                print("AI Response: Appointment rescheduled successfully")
-                print("===========================================================")
-                print()
-                ai_ask = f"Your appointment has been rescheduled successfully for {date_offer} at {time_offer}. Thank you for using our service. , Do you have any other questions or is there anything else I can help with?"
-                handler = "/handle-voice"
-            else:
-                print()
-                print("===========================================================")
-                print("AI Response: Failed to rescheduled appointment")
-                print("===========================================================")
-                print()
-                ai_ask = "Sorry, I was unable to schedule the appointment. Please try again later."
-                handler = "/handle-voice"
-            
-        elif "Nearest Time SLot is Available".lower() == text.lower():
-            sessions[call_sid]['text'] = text
-            ai_ask = message_for_nearest_slots_available_for_updation
-            handler = "/appointment-fixed-two" 
-            
-        elif "Time SLot is not Available".lower() == text.lower():
-            ai_ask = message_for_no_slots_available
-            handler = "/appointment-fixed-two"
+    elif "Time SLot is not Available".lower() == text.lower():
+        ai_ask = message_for_no_slots_available
+        handler = "/appointment-fixed-two"
     
     with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '30' , action_on_empty_result = True , action=handler) as gather:
         gather.say(ai_ask , language='en-US')

@@ -3,19 +3,18 @@ from datetime import datetime
 date = datetime.now()
 
 dt_appoint_prompt = f"""
-                **SCRIPT FOR GENERATING DATE AND TIME:**
+                **SCRIPT FOR EXTRACTION OF DATE AND TIME:**
                 
-                1. You: Goto **SCRIPT FOR GENERATE SCHEDULING SUMMARISATION:** to provide the Caller
+                1. You: Goto **SCRIPT FOR EXTRACTION OF DATE AND TIME FROM THE DATA:** to provide the Caller
                 Details Summarization with a title ’Here is your detailed Imformation You Provided’
                 
-                **SCRIPT FOR GENERATE SCHEDULING SUMMARISATION:**
-                RULES: 1.Create User Details Generate Scheduling Summarisation in the below JSON format.
+                **SCRIPT FOR EXTRACTION OF DATE AND TIME FOR PARTICULAR CALLER:**
+                RULES: 1.Create User Details Extracting Date and Time in the below JSON format.
                        2.The time given by the caller should only consider as time only not date and time.
                        3.Time should be always in the format a.m. and p.m
                        4.Always include the same "Title" as mentioned without changing a little bit.
                        5.The JSON should be in the same format as mentioned below.
-                       6.If and only if caller doesn't share any date , then take [date] as {date}
-                       7.Date in DD-MM-YY format only. Example :-
+                       6.Date in DD-MM-YY format only. Example :-
                             (
                                 "I am avaliable on Tommorrow",
                                 [date] = ({date} + timedelta(days=1)).strftime("%d-%m-%Y")),
