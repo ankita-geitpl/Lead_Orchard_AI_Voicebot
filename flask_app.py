@@ -469,8 +469,10 @@ def appointment_fixed():
     Always and Always Go to **SCRIPT FOR EXTRACTION OF DATE AND TIME FOR PARTICULAR CALLER:** with this {speech_result} to provide the Caller Details Extracting Date and Time with a title ’Here is your detailed Imformation You Provided’
     MORE RULES FOR **SCRIPT FOR EXTRACTION OF DATE AND TIME FOR PARTICULAR CALLER:**
     7. If Caller give the date , then this value will be consider as [date]. This will be the first priority.
-    8. If Caller doesn't provide any date then Go Through the {user_data_dict} and If the value of dateSelected in {user_data_dict} is not "" then the value of dateselected will be the value for [date]. 
-    9. Also consider the time given by the Caller.
+    8. If Caller doesn't provide any date then Go Through the {user_data_dict} and If the value of dateSelected in {user_data_dict} is not "" then the value of dateselected will be the value for [date].
+    9. If Caller give the time , then this value will be consider as [time]. This will be the first priority.
+    10. If Caller doesn't provide any time then Go Through the {user_data_dict} and If the value of timeSelected in {user_data_dict} is not "" then the value of timeSelected will be the value for [time]. 
+    11. Also consider the time given by the Caller.
     """
     ai_response = call_handler.run_assistant(call_sid, speech_result)
     print()
@@ -566,7 +568,7 @@ def cancel_appointment():
         print("AI Response_123:",ai_response)
         print("===========================================================")
         print()
-        if "Here is the delete summary of your scheduling details".lower() not in ai_response.lower():
+        if "Here is the delete summary of scheduling details".lower() not in ai_response.lower():
             ai_response = no_voice_input_message
             handler = "/handle-voice"
             with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '30' , action_on_empty_result = True , action=handler) as gather:
@@ -846,8 +848,10 @@ def appointment_fixed_two():
     Always and Always Go to **SCRIPT FOR EXTRACTION OF DATE AND TIME FOR PARTICULAR CALLER:** with this {speech_result} to provide the Caller Details Extracting Date and Time with a title ’Here is your detailed Imformation You Provided’
     MORE RULES FOR **SCRIPT FOR EXTRACTION OF DATE AND TIME FOR PARTICULAR CALLER:**
     7. If Caller give the date , then this value will be consider as [date]. This will be the first priority.
-    8. If Caller doesn't provide any date then Go Through the {user_data_dict} and If the value of dateSelected in {user_data_dict} is not "" then the value of dateselected will be the value for [date]. 
-    9. Also consider the time given by the Caller.
+    8. If Caller doesn't provide any date then Go Through the {user_data_dict} and If the value of dateSelected in {user_data_dict} is not "" then the value of dateselected will be the value for [date].
+    9. If Caller give the time , then this value will be consider as [time]. This will be the first priority.
+    10. If Caller doesn't provide any time then Go Through the {user_data_dict} and If the value of timeSelected in {user_data_dict} is not "" then the value of timeSelected will be the value for [time]. 
+    11. Also consider the time given by the Caller.
     """
     ai_response = call_handler.run_assistant(call_sid, speech_result)
     print()
