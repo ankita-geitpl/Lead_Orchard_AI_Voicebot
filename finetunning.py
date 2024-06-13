@@ -12,8 +12,8 @@ class FineTunedModelUpdater:
         self.db_params = constants.db_params
         self.dashboard_url_auth_token = constants.DASHBOARD_URL_AUTH_TOKEN
         self.dashboard_url_company_data = constants.DASHBOARD_URL_COMPANY_DATA
-        self.username = constants.dashboard_username
-        self.password = constants.dashboard_password
+        self.username = constants.DASHBOARD_USERNAME
+        self.password = constants.DASHBOARD_PASSWORD
         self.job_id = None
 
     def get_fine_tuned_model_date_and_time(self) -> List[str]:

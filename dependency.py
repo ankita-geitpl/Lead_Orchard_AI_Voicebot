@@ -29,6 +29,7 @@ from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
 from flask import Flask, request , jsonify , url_for , redirect , render_template , flash , get_flashed_messages , send_file
 from twilio.twiml.voice_response import VoiceResponse
+from langchain.document_loaders import JSONLoader
 from langchain_openai import ChatOpenAI
 from langchain_community.document_loaders import DirectoryLoader , PyMuPDFLoader
 from langchain.indexes import VectorstoreIndexCreator
@@ -44,6 +45,8 @@ from langchain_community.vectorstores import Chroma
 from langchain_community.document_loaders import PyPDFDirectoryLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores.faiss import FAISS
+from langchain_community.document_loaders import WebBaseLoader
+from bs4 import BeautifulSoup
 
 
 warnings.filterwarnings("ignore", category=UserWarning, module="pydub")

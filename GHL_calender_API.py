@@ -152,4 +152,4 @@ class GHLCalendarAPI:
             print("An error occurred while fetching available slots:", e)   
             print("===========================================================")
             print()
-            return "" , [] , "Time SLot is not Available" , timezone_user
+            return "" , [] , "Time SLot is not Available" , "America/New_York"

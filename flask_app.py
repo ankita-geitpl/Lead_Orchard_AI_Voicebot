@@ -14,6 +14,7 @@ from Availably_UI import *
 from Authtoken import *
 from timezonefetch import *
 from utters import *
+# from finetunning import *
 
 
 #-----------------------------------------------------INITIALIZATION--------------------------------------------------------------------------------------------------------------------------------------------------
@@ -27,6 +28,8 @@ slots_create = GHLSlotsHandler()
 user_ai_summary = UserAISummary()
 auth_token = AuthTokenGenerator()
 timezone_fetch = TimezoneFetch()
+# finetune_updater = FineTunedModelUpdater()
+
 
 
 #-------------------------------------------------ERROR HANDLING API------------------------------------------------------------------------------------------------------------------
@@ -104,7 +107,7 @@ def voice():
         else:
             sessions[call_sid]['contact_id'] = None  
         
-        with response.gather(input='speech dtmf', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '30' , action_on_empty_result = True , action='/handle-voice') as gather:
+        with response.gather(input='speech dtmf', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '50' , action_on_empty_result = True , action='/handle-voice') as gather:
             gather.say(call_handler.run_assistant(call_sid, ques='Initial Greeting'),language='en-US')
     
     except Exception as e:
@@ -209,14 +212,14 @@ def handle_voice_input():
         else:
             handler = "/handle-voice"
             
-        with response.gather(input='speech dtmf', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '30' , action_on_empty_result = True , action=handler) as gather:
+        with response.gather(input='speech dtmf', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '50' , action_on_empty_result = True , action=handler) as gather:
             gather.say(ai_response, language='en-US')
              
     else:
         ai_response = no_voice_input_message
         handler = "/handle-voice"
     
-    with response.gather(input='speech dtmf', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '30' , action_on_empty_result = True , action=handler) as gather:
+    with response.gather(input='speech dtmf', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '50' , action_on_empty_result = True , action=handler) as gather:
         gather.say(ai_response, language='en-US')
     
     user_ai_summary.create_summary(request.form.get('CallSid') , request.form.get('CallStatus'))
@@ -315,14 +318,14 @@ def contact_information():
         elif ("cancel".lower() in ai_response.lower() or "cancelling".lower() in ai_response.lower()) and "appointment".lower() in ai_response.lower():
             handler = "/cancel-appointment"
             
-        with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '30' , action_on_empty_result = True , action=handler) as gather:
+        with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '50' , action_on_empty_result = True , action=handler) as gather:
             gather.say(ai_response, language='en-US')
         
     else:
         ai_response = no_voice_input_message
         handler = "/contact-information"
     
-    with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '30' , action_on_empty_result = True , action=handler) as gather:
+    with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '50' , action_on_empty_result = True , action=handler) as gather:
         gather.say(ai_response, language='en-US')
     
     user_ai_summary.create_summary(request.form.get('CallSid') , request.form.get('CallStatus'))
@@ -391,14 +394,15 @@ def appointment_confirmation():
             _ , time_offer_con = timezone_fetch.date_and_time(date)
             print("==================================================time  ",time_offer_con)
             date_time_offer.append(time_offer_con)
-        ai_ask = f"This time slot is not available , but we have other time slots for you that are {date_time_offer[0]} and {date_time_offer[1]}"     
+        ai_ask = f"This time slot is not available , but we have other time slots for you that are {date_time_offer[0]} and {date_time_offer[1]} or provide another date and time for the scheduling the appointment"     
         handler = "/appointment-fixed"
 
     elif "Time SLot is not Available".lower() == text.lower():
-        ai_ask = message_for_no_slots_available
+        start_time , end_time = timezone_fetch.find_start_end_time(sessions[call_sid]['access_token'] , timezone_user , sessions[call_sid]['timezone'])
+        ai_ask = f"Our executives are available from {start_time} to {end_time}. On Saturdays and Sundays, we are not available, so please provide an alternative date and time."
         handler = "/appointment-fixed"
 
-    with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '30' , action_on_empty_result = True , action=handler) as gather:
+    with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '50' , action_on_empty_result = True , action=handler) as gather:
         gather.say(ai_ask , language='en-US')
     
     user_ai_summary.create_summary(request.form.get('CallSid') , request.form.get('CallStatus'))
@@ -527,14 +531,15 @@ def appointment_fixed():
             _ , time_offer_con = timezone_fetch.date_and_time(date)
             print("==================================================time  ",time_offer_con)
             date_time_offer.append(time_offer_con)
-        ai_ask = f"This time slot is not available , but we have other time slots for you that are {date_time_offer[0]} and {date_time_offer[1]}"     
+        ai_ask = f"This time slot is not available , but we have other time slots for you that are {date_time_offer[0]} and {date_time_offer[1]} or provide another date and time for the scheduling the appointment"     
         handler = "/appointment-fixed"
         
     elif "Time SLot is not Available".lower() == text.lower():
-        ai_ask = message_for_no_slots_available
+        start_time , end_time = timezone_fetch.find_start_end_time(sessions[call_sid]['access_token'] , timezone_user , sessions[call_sid]['timezone'])
+        ai_ask = f"Our executives are available from {start_time} to {end_time}. On Saturdays and Sundays, we are not available, so please provide an alternative date and time."
         handler = "/appointment-fixed"
     
-    with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '30' , action_on_empty_result = True , action=handler) as gather:
+    with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '50' , action_on_empty_result = True , action=handler) as gather:
         gather.say(ai_ask , language='en-US')
 
     user_ai_summary.create_summary(request.form.get('CallSid') , request.form.get('CallStatus'))
@@ -571,7 +576,7 @@ def cancel_appointment():
         if "Here is the delete summary of scheduling details".lower() not in ai_response.lower():
             ai_response = no_voice_input_message
             handler = "/handle-voice"
-            with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '30' , action_on_empty_result = True , action=handler) as gather:
+            with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '50' , action_on_empty_result = True , action=handler) as gather:
                 gather.say(ai_response , language='en-US')
         else:
             date , _ = contact_handler.get_subaccount_info_2(ai_response) 
@@ -584,7 +589,7 @@ def cancel_appointment():
             print("===========================================================")
             print()
             handler = "/handle-voice"
-            with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '30' , action_on_empty_result = True , action=handler) as gather:
+            with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '50' , action_on_empty_result = True , action=handler) as gather:
                 gather.say(ai_response , language='en-US')
     except:
         ai_response = no_voice_input_message
@@ -594,7 +599,7 @@ def cancel_appointment():
         print("===========================================================")
         print()
         handler = "/handle-voice"
-        with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '30' , action_on_empty_result = True , action=handler) as gather:
+        with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '50' , action_on_empty_result = True , action=handler) as gather:
             gather.say(ai_response , language='en-US')
     
     user_ai_summary.create_summary(request.form.get('CallSid') , request.form.get('CallStatus'))
@@ -694,13 +699,13 @@ def update_information():
         elif ("cancel".lower() in ai_response.lower() or "cancelling".lower() in ai_response.lower()) and "appointment".lower() in ai_response.lower():
             handler = "/cancel-appointment"
 
-        with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '30' , action_on_empty_result = True , action=handler) as gather:
+        with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '50' , action_on_empty_result = True , action=handler) as gather:
             gather.say(ai_response, language='en-US')
         
     else:
         ai_response = no_voice_input_message
         handler = "/update-information"
-        with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '30' , action_on_empty_result = True , action=handler) as gather:
+        with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '50' , action_on_empty_result = True , action=handler) as gather:
             gather.say(ai_response, language='en-US')
     
     user_ai_summary.create_summary(request.form.get('CallSid') , request.form.get('CallStatus'))
@@ -769,14 +774,15 @@ def appointment_confirmation_two():
             _ , time_offer_con = timezone_fetch.date_and_time(date)
             print("==================================================time  ",time_offer_con)
             date_time_offer.append(time_offer_con)
-        ai_ask = f"This time slot is not available , but we have other time slots for you that are {date_time_offer[0]} and {date_time_offer[1]}"           
+        ai_ask = f"This time slot is not available , but we have other time slots for you that are {date_time_offer[0]} and {date_time_offer[1]} or provide another date and time for the recheduling the appointment"           
         handler = "/appointment-fixed-two"
 
     elif "Time SLot is not Available".lower() == text.lower():
-        ai_ask = message_for_no_slots_available
-        handler = "/appointment-fixed-two"
+        start_time , end_time = timezone_fetch.find_start_end_time(sessions[call_sid]['access_token'] , timezone_user , sessions[call_sid]['timezone'])
+        ai_ask = f"Our executives are available from {start_time} to {end_time}. On Saturdays and Sundays, we are not available, so please provide an alternative date and time."
+        handler = "/appointment-fixed"
 
-    with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '30' , action_on_empty_result = True , action=handler) as gather:
+    with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '50' , action_on_empty_result = True , action=handler) as gather:
         gather.say(ai_ask , language='en-US')
     
     user_ai_summary.create_summary(request.form.get('CallSid') , request.form.get('CallStatus'))
@@ -905,14 +911,15 @@ def appointment_fixed_two():
             _ , time_offer_con = timezone_fetch.date_and_time(date)
             print("==================================================time  ",time_offer_con)
             date_time_offer.append(time_offer_con)
-        ai_ask = f"This time slot is not available , but we have other time slots for you that are {date_time_offer[0]} and {date_time_offer[1]}"     
+        ai_ask = f"This time slot is not available , but we have other time slots for you that are {date_time_offer[0]} and {date_time_offer[1]} or provide another date and time for the recheduling the appointment"     
         handler = "/appointment-fixed-two" 
         
     elif "Time SLot is not Available".lower() == text.lower():
-        ai_ask = message_for_no_slots_available
-        handler = "/appointment-fixed-two"
+        start_time , end_time = timezone_fetch.find_start_end_time(sessions[call_sid]['access_token'] , timezone_user , sessions[call_sid]['timezone'])
+        ai_ask = f"Our executives are available from {start_time} to {end_time}. On Saturdays and Sundays, we are not available, so please provide an alternative date and time."
+        handler = "/appointment-fixed"
     
-    with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '30' , action_on_empty_result = True , action=handler) as gather:
+    with response.gather(input='speech', enhanced=True, speech_model='phone_call', speech_timeout='2', timeout = '50' , action_on_empty_result = True , action=handler) as gather:
         gather.say(ai_ask , language='en-US')
 
     user_ai_summary.create_summary(request.form.get('CallSid') , request.form.get('CallStatus'))
@@ -920,3 +927,18 @@ def appointment_fixed_two():
 
 if __name__ == "__main__":
     app.run(host="localhost", port=3000, debug=False)
+
+
+#---------------------------------------------------FINETUNNIG API CONT.---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+# @app.route('/finetune', methods=['POST'])
+# def finetune():
+#     try:
+#         # Run the finetuning job
+#         finetune_updater.finetunning_job()
+#         return jsonify({'message': 'Finetuning job started successfully'})
+#     except Exception as e:
+#         return jsonify({'message': str(e)})
+
+
