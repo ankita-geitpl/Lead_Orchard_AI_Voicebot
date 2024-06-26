@@ -1,6 +1,7 @@
 from dependency import *
 import constants
 from GHL_calender_API import *
+from jsonloader_for_prompt_knowledge import *
 from fixed_prompt.create_appointment_prompt import *
 # from fixed_prompt.getdatetime_prompt import *
 from fixed_prompt.delete_appointment_prompt import *
@@ -11,6 +12,10 @@ from fixed_prompt.getdatetimeappoint_prompt import *
 
 openai_api_key = os.environ["OPENAI_API_KEY"] = constants.APIKEY
 GOHIGHLEVEL_API_URL = constants.GOHIGHLEVEL_API_URL
+account_sid = constants.TWILIO_ACCOUNT_SID
+auth_token = constants.TWILIO_AUTH_TOKEN
+client = Client(account_sid, auth_token)
+
 
 sessions = {}
 
@@ -28,6 +33,24 @@ class TwilioCallHandler:
 
     def __init__(self):
         pass
+
+    def twilio_send_sms(self , company_number , customer_number):
+        body = ""  
+        try :
+            message = client.messages \
+                        .create(
+                            body=body,
+                            from_=company_number,
+                            to=customer_number
+                        )
+            print("Message sent")
+        
+        except error as e:
+            print()   
+            print("===========================================================")
+            print("Error sending the message:", e)
+            print("===========================================================")
+            print()
     
     def get_prompt_file(self , company_number):
         # Replace these values with your PostgreSQL database information
@@ -106,6 +129,20 @@ class TwilioCallHandler:
         embedding = OpenAIEmbeddings(openai_api_key=openai_api_key)
         vectorStore = FAISS.from_documents(splitdocs, embedding=embedding)
         return vectorStore
+
+    # def get_documents_from_web(self , data_pdf_path):
+    #     loader = JSONLoader(data=data, jq_schema='.messages[].content', text_content=False)
+    #     loaded_data = loader.load()
+    #     documents: List[Document] = [Document(content) for content in loaded_data]
+    #     splitter = RecursiveCharacterTextSplitter(
+    #         chunk_size=800,
+    #         chunk_overlap=50
+    #     )
+    #     split_docs = splitter.split_documents(documents)
+    #     split_texts = [doc.page_content for doc in split_docs]
+    #     embedding = OpenAIEmbeddings(openai_api_key=openai_api_key)
+    #     vectorStore = FAISS.from_texts(split_texts, embedding=embedding)
+    #     return vectorStore
     
     def create_chain(self, call_sid , vectorStore):
         prompt_data = sessions[call_sid]['prompt_data']
@@ -175,5 +212,5 @@ class GHLSlotsHandler:
         slot , get_free_slots , text , timezone_user = ghl_calender.fetch_available_slots(calendars_id , access_token , start_date, end_date, time_24h_format, date_selected , timezone)
         
         time.sleep(5)
-        # print(f"{text}\n{get_free_slots}\n{calendars_id}\n{slot}\n{timezone_user}")
+
         return text , get_free_slots , calendars_id , slot , timezone_user

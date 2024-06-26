@@ -81,6 +81,13 @@ update_appoint_prompt = f"""
                                 "I am available on the third week Saturday in the month of April",
                                 [previous date] = ({date} + timedelta(days=(19 - datetime.now().day + (5 - datetime.now().weekday()) % 7) % 7)).strftime("%d-%m-%Y")),
                             ),
+
+                        for example :-
+                                Caller give the date for I'm here to accommodate your schedule. Could you please provide the date you want to reschedule the appointment? Please provide the updated date as 19-06-2024 and 
+                                Caller give the date for Thankyou for providing the time [time] , Could you please provide the date for which you want to reschedule the appoitnment? as 14-06-2024
+                                then , 
+                                    [updated date or Updated Date Selected] = 19-06-2024
+                                    [previous date or Previous Date Selected] = 14-06-2024
                 
                         <format>
                                 Title: Here is the update summary of scheduling details :-

@@ -38,8 +38,8 @@ dt_appoint_prompt = f"""
                 
                         <format>
                                 Title: Here is the summary of scheduling details :-
-                                Date Selected: 
-                                Time Selected:
+                                Date Selected: [date]
+                                Time Selected: [time]
                         <format>
                 
                 Output format:

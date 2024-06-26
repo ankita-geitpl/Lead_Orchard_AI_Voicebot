@@ -7,3 +7,4 @@ pdf_data/prompt_data/
 pdf_data/user_appoint_data/
 fixed_prompt/__pycache__
 __pycache__
+*__pycache__*

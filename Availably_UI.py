@@ -1,4 +1,5 @@
 from dependency import *
+import pika
 
 
 # Marketplace account
@@ -23,6 +24,10 @@ app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.config['PROMPT_UPLOAD_FOLDER'] = constants.PROMPT_UPLOAD_FOLDER
 app.config['DATA_UPLOAD_FOLDER'] = constants.DATA_UPLOAD_FOLDER
 
+messages = []
+# RabbitMQ connection parameters
+RABBITMQ_HOST = 'localhost'
+RABBITMQ_QUEUE = 'flask_queue'
 
 def get_companies_data():
     try:
@@ -379,7 +384,7 @@ def fetch_and_extract_admin_user_ids(location_id, access_token):
     
     # Convert params dictionary to query string
     query_string = '&'.join([f"{key}={value}" for key, value in params.items()])
-    
+     
     response = requests.get(f'{url}?{query_string}', headers=headers)
 
     response.raise_for_status()  # Raise an exception for 4xx or 5xx errors
@@ -393,11 +398,32 @@ def fetch_and_extract_admin_user_ids(location_id, access_token):
     
     return admin_user_options
       
+
+def connect_to_rabbitmq():
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBITMQ_HOST))
+    channel = connection.channel()
+    channel.queue_declare(queue=RABBITMQ_QUEUE)
+    return connection, channel
+def callback(ch, method, properties, body):
+    global messages
+    message = json.loads(body)
+    messages.append(message)
+    print(f"Received message: {message}")
+    ch.basic_ack(delivery_tag=method.delivery_tag)
+def start_consumer():
+    connection, channel = connect_to_rabbitmq()
+    channel.basic_consume(queue=RABBITMQ_QUEUE, on_message_callback=callback, auto_ack=False)
+    print('Started consuming')
+    channel.start_consuming()
+
+
 # View to render a web page
 @app.route('/admin')
 def home():
     messages = get_flashed_messages()
     code = request.args.get('code')
+    print("=====================================code")
+    print(code)
     if code:
         # Assuming you have an API endpoint to add a user using the code
         url = f"https://services.leadconnectorhq.com/oauth/token"
@@ -731,3 +757,8 @@ def submit_user_info(record_id):
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@app.route('/messages', methods=['GET'])
+def get_messages():
+    global messages
+    return jsonify({'messages': messages}), 200
